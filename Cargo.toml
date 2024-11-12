@@ -1,0 +1,41 @@
+#     [xdlinux/libxduauth] for Rust.
+#     Copyright (C) 2024  learturely <learturely@gmail.com>
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU Affero General Public License as published
+#     by the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU Affero General Public License for more details.
+#
+#     You should have received a copy of the GNU Affero General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+[package]
+name = "x_l4rs"
+version = "0.0.1"
+edition = "2021"
+authors = ["learturely"]
+license = "GAPL-3.0"
+description = "[xdlinux/libxduauth] for Rust."
+readme = "./README.md"
+repository = "https://github.com/learturely/x_l4rs"
+
+[dependencies]
+base64 = "0.22"
+cookie_store = "0.21"
+cxsign_imageproc = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
+cxsign_protocol = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
+cxsign_login = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
+cxsign_error = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
+image = "0.25"
+log = "0.4"
+onceinit = "0.0.4"
+percent-encoding = "2.3"
+rust-crypto = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+ureq = { version = "2.10", features = ["cookies", "json"] }
+rand = "0.8"
