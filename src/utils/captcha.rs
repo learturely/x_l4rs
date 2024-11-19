@@ -16,7 +16,7 @@
 
 use crate::protocol::open_slider_captcha;
 use crate::utils::{base64_dec, get_now_timestamp_mills};
-use cxsign_imageproc::{find_max_ncc, find_sub_image, image_from_bytes};
+use cxlib_imageproc::{find_max_ncc, find_sub_image, image_from_bytes};
 use log::debug;
 use serde::Deserialize;
 use ureq::Agent;

@@ -15,7 +15,7 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::protocol::XL4rsProtocolItem;
-use cxsign_protocol::ProtocolItemTrait;
+use cxlib_protocol::ProtocolItemTrait;
 use ureq::Agent;
 
 pub fn check_need_captcha(

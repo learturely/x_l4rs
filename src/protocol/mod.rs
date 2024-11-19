@@ -22,7 +22,7 @@ pub use captcha::*;
 pub use login::*;
 pub use user::*;
 
-use cxsign_protocol::{ProtocolDataTrait, ProtocolItemTrait, ProtocolTrait};
+use cxlib_protocol::{ProtocolDataTrait, ProtocolItemTrait, ProtocolTrait};
 use onceinit::OnceInit;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;

@@ -18,10 +18,10 @@ use crate::protocol::verify_slider_captcha;
 use crate::utils::{
     aes_dec, aes_enc, base64_dec, base64_enc, get_now_timestamp_mills, solve_captcha,
 };
-use cxsign_error::Error;
-use cxsign_login::utils::pkcs7_pad;
-use cxsign_login::LoginSolverTrait;
-use cxsign_protocol::ProtocolItem;
+use cxlib_error::Error;
+use cxlib_login::utils::pkcs7_pad;
+use cxlib_login::LoginSolverTrait;
+use cxlib_protocol::ProtocolItem;
 use log::debug;
 use rand::Rng;
 use serde::Deserialize;
