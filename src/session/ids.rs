@@ -11,12 +11,12 @@ use serde::Deserialize;
 use ureq::{Agent, AgentBuilder};
 
 #[derive(Eq, PartialEq)]
-pub struct IDSSession {
+pub struct IDSLoginImpl {
     target: &'static str,
 }
-impl IDSSession {
-    pub fn new(target: &'static str) -> IDSSession {
-        IDSSession { target }
+impl IDSLoginImpl {
+    pub fn new(target: &'static str) -> IDSLoginImpl {
+        IDSLoginImpl { target }
     }
     pub fn target(&self) -> &'static str {
         self.target
@@ -28,6 +28,16 @@ impl IDSSession {
         target:
             "http://ehall.xidian.edu.cn/login?service=http://ehall.xidian.edu.cn/new/index.html",
     };
+    #[cfg(feature = "cxlib_login")]
+    pub fn get_login_solver<CaptchaSolver>(
+        self,
+        captcha_solver: CaptchaSolver,
+    ) -> crate::XL4rsLoginSolver<CaptchaSolver>
+    where
+        CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> u32,
+    {
+        crate::XL4rsLoginSolver::new(self, captcha_solver)
+    }
     pub fn login(
         &self,
         account: &str,

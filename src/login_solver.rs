@@ -17,7 +17,7 @@
 
 pub(crate) const ENC_KEY: &[u8; 16] = b"x_l4rsforxdsign.";
 use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, ENC_IV};
-use crate::IDSSession;
+use crate::IDSLoginImpl;
 use cxlib_error::Error;
 use cxlib_protocol::{ProtocolItem, ProtocolItemTrait};
 use cxlib_utils::pkcs7_pad;
@@ -28,16 +28,16 @@ pub struct XL4rsLoginSolver<CaptchaSolver>
 where
     CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> u32,
 {
-    inner: IDSSession,
+    inner: IDSLoginImpl,
     captcha_solver: CaptchaSolver,
 }
 impl<CaptchaSolver> XL4rsLoginSolver<CaptchaSolver>
 where
     CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> u32,
 {
-    pub fn new(target: &'static str, captcha_solver: CaptchaSolver) -> Self {
+    pub fn new(inner: IDSLoginImpl, captcha_solver: CaptchaSolver) -> Self {
         XL4rsLoginSolver {
-            inner: IDSSession::new(target),
+            inner,
             captcha_solver,
         }
     }
