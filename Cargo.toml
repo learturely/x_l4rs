@@ -27,10 +27,10 @@ repository = "https://github.com/learturely/x_l4rs"
 [dependencies]
 base64 = "0.22"
 cookie_store = "0.21"
-cxlib_imageproc = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
-cxlib_protocol = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
-cxlib_login = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
-cxlib_error = { git = "https://github.com/worksoup/newsign.git", branch = "dev-v0.2" }
+cxlib_imageproc = { git = "https://github.com/worksoup/newsign.git" }
+cxlib_protocol = { git = "https://github.com/worksoup/newsign.git" }
+cxlib_login = { git = "https://github.com/worksoup/newsign.git" }
+cxlib_error = { git = "https://github.com/worksoup/newsign.git" }
 image = "0.25"
 log = "0.4"
 onceinit = "0.0.4"
