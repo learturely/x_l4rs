@@ -17,15 +17,19 @@
 mod captcha;
 mod login;
 mod user;
-
 pub use captcha::*;
 pub use login::*;
 pub use user::*;
 
-use cxlib_protocol::{ProtocolDataTrait, ProtocolItemTrait, ProtocolTrait};
-use onceinit::OnceInit;
-use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+
+#[cfg(feature = "cxlib_protocol_integrated")]
+use cxlib_protocol::ProtocolItemTrait;
+#[cfg(feature = "cxlib_protocol_integrated")]
+mod cxlib_integrated;
+#[cfg(feature = "cxlib_protocol_integrated")]
+pub use cxlib_integrated::*;
 
 pub enum XL4rsProtocolItem {
     Login,
@@ -34,16 +38,6 @@ pub enum XL4rsProtocolItem {
     OpenSliderCaptcha,
     Authserver,
     GetUserConf,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct XL4rsProtocolData {
-    login: Option<String>,
-    check_need_captcha: Option<String>,
-    verify_slider_captcha: Option<String>,
-    open_slider_captcha: Option<String>,
-    authserver: Option<String>,
-    get_user_conf: Option<String>,
 }
 impl XL4rsProtocolItem {
     pub const LOGIN: &'static str = "http://ids.xidian.edu.cn/authserver/login";
@@ -57,85 +51,23 @@ impl XL4rsProtocolItem {
 
     pub const GET_USER_CONF: &'static str =
         "https://ids.xidian.edu.cn/personalInfo/common/getUserConf";
+    pub fn get_default(&self) -> &'static str {
+        match self {
+            XL4rsProtocolItem::Login => Self::LOGIN,
+            XL4rsProtocolItem::CheckNeedCaptcha => Self::CHECK_NEED_CAPTCHA,
+            XL4rsProtocolItem::VerifySliderCaptcha => Self::VERIFY_SLIDER_CAPTCHA,
+            XL4rsProtocolItem::OpenSliderCaptcha => Self::OPEN_SLIDER_CAPTCHA,
+            XL4rsProtocolItem::Authserver => Self::AUTHSERVER,
+            XL4rsProtocolItem::GetUserConf => Self::GET_USER_CONF
+        }
+    }
+    #[cfg(not(feature = "cxlib_protocol_integrated"))]
+    pub fn get(&self) -> &'static str {
+        self.get_default()
+    }
 }
 impl Display for XL4rsProtocolItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         self.get().fmt(f)
     }
 }
-impl ProtocolItemTrait for XL4rsProtocolItem {
-    type ProtocolData = XL4rsProtocolData;
-
-    fn config_file_name() -> &'static str {
-        "x_l4rs-protocol.toml"
-    }
-
-    fn get_protocol_() -> &'static OnceInit<(dyn ProtocolTrait<XL4rsProtocolItem> + 'static)> {
-        &X_L4RS_PROTOCOL
-    }
-
-    fn get_protocol() -> &'static dyn ProtocolTrait<Self> {
-        &*X_L4RS_PROTOCOL
-    }
-
-    fn get_default(&self) -> String {
-        match self {
-            XL4rsProtocolItem::Login => Self::LOGIN.to_string(),
-            XL4rsProtocolItem::CheckNeedCaptcha => Self::CHECK_NEED_CAPTCHA.to_string(),
-            XL4rsProtocolItem::VerifySliderCaptcha => Self::VERIFY_SLIDER_CAPTCHA.to_string(),
-            XL4rsProtocolItem::OpenSliderCaptcha => Self::OPEN_SLIDER_CAPTCHA.to_string(),
-            XL4rsProtocolItem::Authserver => Self::AUTHSERVER.to_string(),
-            XL4rsProtocolItem::GetUserConf => Self::GET_USER_CONF.to_string(),
-        }
-    }
-}
-
-impl Default for XL4rsProtocolData {
-    fn default() -> Self {
-        XL4rsProtocolData {
-            login: Some(XL4rsProtocolItem::LOGIN.to_string()),
-            check_need_captcha: Some(XL4rsProtocolItem::CHECK_NEED_CAPTCHA.to_string()),
-            verify_slider_captcha: Some(XL4rsProtocolItem::VERIFY_SLIDER_CAPTCHA.to_string()),
-            open_slider_captcha: Some(XL4rsProtocolItem::OPEN_SLIDER_CAPTCHA.to_string()),
-            authserver: Some(XL4rsProtocolItem::AUTHSERVER.to_string()),
-            get_user_conf: Some(XL4rsProtocolItem::GET_USER_CONF.to_string()),
-        }
-    }
-}
-
-impl ProtocolDataTrait for XL4rsProtocolData {
-    type ProtocolItem = XL4rsProtocolItem;
-
-    fn map_by_enum<'a, T>(
-        &'a self,
-        t: &XL4rsProtocolItem,
-        do_something: impl Fn(&'a Option<String>) -> T,
-    ) -> T {
-        match t {
-            XL4rsProtocolItem::Login => do_something(&self.login),
-            XL4rsProtocolItem::CheckNeedCaptcha => do_something(&self.check_need_captcha),
-            XL4rsProtocolItem::VerifySliderCaptcha => do_something(&self.verify_slider_captcha),
-            XL4rsProtocolItem::OpenSliderCaptcha => do_something(&self.open_slider_captcha),
-            XL4rsProtocolItem::Authserver => do_something(&self.authserver),
-            XL4rsProtocolItem::GetUserConf => do_something(&self.get_user_conf),
-        }
-    }
-    fn map_by_enum_mut<'a, T>(
-        &'a mut self,
-        t: &XL4rsProtocolItem,
-        do_something: impl Fn(&'a mut Option<String>) -> T,
-    ) -> T {
-        match t {
-            XL4rsProtocolItem::Login => do_something(&mut self.login),
-            XL4rsProtocolItem::CheckNeedCaptcha => do_something(&mut self.check_need_captcha),
-            XL4rsProtocolItem::VerifySliderCaptcha => {
-                do_something(&mut self.verify_slider_captcha)
-            }
-
-            XL4rsProtocolItem::OpenSliderCaptcha => do_something(&mut self.open_slider_captcha),
-            XL4rsProtocolItem::Authserver => do_something(&mut self.authserver),
-            XL4rsProtocolItem::GetUserConf => do_something(&mut self.get_user_conf),
-        }
-    }
-}
-static X_L4RS_PROTOCOL: OnceInit<dyn ProtocolTrait<XL4rsProtocolItem>> = OnceInit::new();

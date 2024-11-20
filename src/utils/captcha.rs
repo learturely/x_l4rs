@@ -14,14 +14,20 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::protocol::open_slider_captcha;
-use crate::utils::{base64_dec, get_now_timestamp_mills};
-use cxlib_imageproc::{find_max_ncc, find_sub_image, image_from_bytes};
+use crate::{
+    protocol::open_slider_captcha,
+    utils::{base64_dec, get_now_timestamp_mills},
+};
+use cxlib_imageproc::image_from_bytes;
+use image::DynamicImage;
 use log::debug;
 use serde::Deserialize;
 use ureq::Agent;
 
-pub fn solve_captcha(agent: &Agent) -> u32 {
+pub fn solve_captcha(
+    agent: &Agent,
+    captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+) -> u32 {
     #[derive(Deserialize)]
     struct Images {
         #[serde(rename = "smallImage")]
@@ -38,21 +44,10 @@ pub fn solve_captcha(agent: &Agent) -> u32 {
         .expect("Failed to parse captcha slider");
     let small_image = base64_dec(small_image).expect("Failed to base64 decode captcha small image");
     let big_image = base64_dec(big_image).expect("Failed to base64 decode captcha big image");
-    let small_image = image_from_bytes(small_image);
     let big_image = image_from_bytes(big_image);
-    let v = find_sub_image(&big_image, &small_image, find_max_ncc);
-    debug!("{v}, {}", v * 280 / big_image.width());
-    v * 280 / big_image.width()
-}
-
-#[cfg(test)]
-mod tests {
-    use log::info;
-    use super::*;
-    #[test]
-    fn test_solve_captcha() {
-        let agent = Agent::new();
-        let result = solve_captcha(&agent);
-        info!("{}", result);
-    }
+    let small_image = image_from_bytes(small_image);
+    let v = captcha_solver(&big_image, &small_image);
+    let r = v * 280 / big_image.width();
+    debug!("{v}, {r}");
+    r
 }

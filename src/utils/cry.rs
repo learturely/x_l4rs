@@ -19,6 +19,7 @@ use crypto::buffer::{BufferResult, ReadBuffer, WriteBuffer};
 use crypto::{aes, blockmodes, buffer};
 use percent_encoding::PercentEncode;
 
+pub(crate) const ENC_IV: &[u8; 16] = b"xidianscriptsxdu";
 pub fn aes_enc(padded_data: &[u8], key: &[u8; 16], iv: &[u8]) -> Vec<u8> {
     let mut encryptor =
         aes::cbc_encryptor(aes::KeySize::KeySize128, key, iv, blockmodes::NoPadding);
@@ -97,7 +98,7 @@ pub fn flatten_bytes<const BLOCK_SIZE: usize>(blocks: Vec<[u8; BLOCK_SIZE]>) -> 
 #[cfg(test)]
 mod tests {
     use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, flatten_bytes};
-    use cxsign_login::utils::pkcs7_pad;
+    use cxlib_utils::pkcs7_pad;
     use log::info;
 
     #[test]
@@ -120,7 +121,7 @@ mod tests {
     fn test_aes_enc() {
         let r = flatten_bytes(pkcs7_pad::<16>(b"password"));
         let enc_r = base64_enc(aes_enc(&r, b"x_l4rsforxdsign.", b"xidianscriptsxdu"));
-        println!("{enc_r}",);
+        println!("{enc_r}", );
         println!(
             "{}",
             aes_dec(
@@ -128,10 +129,10 @@ mod tests {
                 b"x_l4rsforxdsign.",
                 b"xidianscriptsxdu"
             )
-            .unwrap()
-            .iter()
-            .map(|c| *c as char)
-            .collect::<String>()
+                .unwrap()
+                .iter()
+                .map(|c| *c as char)
+                .collect::<String>()
         );
     }
 }

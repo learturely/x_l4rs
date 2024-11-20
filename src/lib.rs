@@ -16,12 +16,20 @@
 
 #![feature(vec_into_raw_parts)]
 #![feature(let_chains)]
+#![feature(str_as_str)]
+#![feature(adt_const_params)]
 extern crate core;
 
-mod login_solver;
 pub mod protocol;
 pub mod utils;
+mod session;
 
+pub use session::*;
+
+#[cfg(feature = "cxlib_login")]
+mod login_solver;
+
+#[cfg(feature = "cxlib_login")]
 pub use login_solver::*;
 
 #[cfg(test)]

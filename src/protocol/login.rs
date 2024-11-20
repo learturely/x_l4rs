@@ -15,6 +15,7 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{protocol::XL4rsProtocolItem, utils::percent_enc};
+#[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use log::debug;
 use std::ops::Deref;
@@ -58,7 +59,7 @@ pub fn is_logged_in(agent: &Agent) -> bool {
         .cookie_store(agent.cookie_store().deref().clone())
         .build();
     agent
-        .get(&XL4rsProtocolItem::Authserver.get())
+        .get(XL4rsProtocolItem::Authserver.get().as_str())
         .call()
         .is_ok_and(|r| {
             let code = r.status();

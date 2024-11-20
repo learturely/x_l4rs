@@ -15,6 +15,7 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::protocol::XL4rsProtocolItem;
+#[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use serde::Serialize;
 use ureq::Agent;
@@ -30,7 +31,7 @@ pub fn get_user_conf(agent: &Agent) -> Result<ureq::Response, Box<ureq::Error>> 
         n: f64,
     }
     Ok(agent
-        .post(&XL4rsProtocolItem::GetUserConf.get())
+        .post(XL4rsProtocolItem::GetUserConf.get().as_str())
         .send_json(Data {
             n: 0.12724911253015814, // 似乎没用。
         })?)
