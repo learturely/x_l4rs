@@ -19,6 +19,7 @@ pub(crate) const ENC_KEY: &[u8; 16] = b"x_l4rsforxdsign.";
 use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, ENC_IV};
 use crate::IDSLoginImpl;
 use cxlib_error::Error;
+#[cfg(feature = "cxlib_protocol")]
 use cxlib_protocol::{ProtocolItem, ProtocolItemTrait};
 use cxlib_utils::pkcs7_pad;
 use image::DynamicImage;
@@ -62,12 +63,13 @@ where
             ENC_IV,
         )
         .map_err(|e| Error::LoginError(format!("密码解密出错：{e:?}")))?;
-        self.inner.login(
-            account,
-            &passwd,
-            &ProtocolItem::UserAgent.get(),
-            &self.captcha_solver,
-        )
+        #[cfg(not(feature = "cxlib_protocol"))]
+        let agent = IDSLoginImpl::build_agent();
+        #[cfg(feature = "cxlib_protocol")]
+        let agent = IDSLoginImpl::build_agent_with_user_agent(&ProtocolItem::UserAgent.get());
+        self.inner
+            .login(&agent, account, &passwd, &self.captcha_solver)?;
+        Ok(agent)
     }
 
     fn pwd_enc(&self, pwd: String) -> Result<String, Error> {

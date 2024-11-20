@@ -38,19 +38,28 @@ impl IDSLoginImpl {
     {
         crate::XL4rsLoginSolver::new(self, captcha_solver)
     }
-    pub fn login(
-        &self,
-        account: &str,
-        passwd: &[u8],
-        user_agent: &str,
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
-    ) -> Result<Agent, Error> {
+    pub fn build_agent() -> Agent {
         let cookie_store = cookie_store::CookieStore::new(None);
-        let agent = AgentBuilder::new()
-            .user_agent(user_agent)
+        AgentBuilder::new()
             .redirects(15)
             .cookie_store(cookie_store)
-            .build();
+            .build()
+    }
+    pub fn build_agent_with_user_agent(ua: &str) -> Agent {
+        let cookie_store = cookie_store::CookieStore::new(None);
+        AgentBuilder::new()
+            .redirects(15)
+            .user_agent(ua)
+            .cookie_store(cookie_store)
+            .build()
+    }
+    pub fn login(
+        &self,
+        agent: &Agent,
+        account: &str,
+        passwd: &[u8],
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+    ) -> Result<(), Error> {
         let page = crate::protocol::login_page(&agent, self.target)?
             .into_string()
             .expect("登录页获取失败。");
@@ -147,6 +156,6 @@ impl IDSLoginImpl {
         post_data.push(("remember_me", "true"));
         post_data.push(("captcha", ""));
         let _ = crate::protocol::login(&agent, self.target, &post_data)?;
-        Ok(agent)
+        Ok(())
     }
 }
