@@ -1,15 +1,62 @@
+//     [xdlinux/libxduauth] for Rust.
+//     Copyright (C) 2024  learturely <learturely@gmail.com>
+//
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU Affero General Public License as published
+//     by the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU Affero General Public License for more details.
+//
+//     You should have received a copy of the GNU Affero General Public License
+//     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#![cfg(feature = "ids_login_impl")]
+
 use crate::{
-    protocol::verify_slider_captcha,
-    utils::{aes_enc, base64_enc, get_now_timestamp_mills, solve_captcha, ENC_IV},
+    protocol::ids as ids_protocol,
+    utils::{aes_enc, base64_dec, base64_enc, get_now_timestamp_mills, X_L4RS_ENC_IV},
 };
 use cxlib_error::Error;
+use cxlib_imageproc::image_from_bytes;
 use cxlib_utils::pkcs7_pad;
 use image::DynamicImage;
 use log::debug;
 use rand::Rng;
 use serde::Deserialize;
-use ureq::{Agent, AgentBuilder};
+use std::ops::Deref;
+use ureq::Agent;
 
+fn solve_captcha(
+    agent: &Agent,
+    captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+) -> u32 {
+    #[derive(Deserialize)]
+    struct Images {
+        #[serde(rename = "smallImage")]
+        small_image: String,
+        #[serde(rename = "bigImage")]
+        big_image: String,
+    }
+    let Images {
+        small_image,
+        big_image,
+    } = ids_protocol::open_slider_captcha(agent, get_now_timestamp_mills())
+        .expect("Failed to load captcha slider")
+        .into_json()
+        .expect("Failed to parse captcha slider");
+    let small_image = base64_dec(small_image).expect("Failed to base64 decode captcha small image");
+    let big_image = base64_dec(big_image).expect("Failed to base64 decode captcha big image");
+    let big_image = image_from_bytes(big_image);
+    let small_image = image_from_bytes(small_image);
+    let v = captcha_solver(&big_image, &small_image);
+    let r = v * 280 / big_image.width();
+    debug!("{v}, {r}");
+    r
+}
 #[derive(Eq, PartialEq)]
 pub struct IDSLoginImpl {
     target: &'static str,
@@ -38,21 +85,6 @@ impl IDSLoginImpl {
     {
         crate::XL4rsLoginSolver::new(self, captcha_solver)
     }
-    pub fn build_agent() -> Agent {
-        let cookie_store = cookie_store::CookieStore::new(None);
-        AgentBuilder::new()
-            .redirects(15)
-            .cookie_store(cookie_store)
-            .build()
-    }
-    pub fn build_agent_with_user_agent(ua: &str) -> Agent {
-        let cookie_store = cookie_store::CookieStore::new(None);
-        AgentBuilder::new()
-            .redirects(15)
-            .user_agent(ua)
-            .cookie_store(cookie_store)
-            .build()
-    }
     pub fn login(
         &self,
         agent: &Agent,
@@ -60,11 +92,11 @@ impl IDSLoginImpl {
         passwd: &[u8],
         captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
     ) -> Result<(), Error> {
-        let page = crate::protocol::login_page(&agent, self.target)?
+        let page = ids_protocol::login_page(&agent, self.target)?
             .into_string()
             .expect("登录页获取失败。");
         while let Ok(r) =
-            crate::protocol::check_need_captcha(&agent, account, get_now_timestamp_mills())
+            ids_protocol::check_need_captcha(&agent, account, get_now_timestamp_mills())
         {
             let r = r.into_string().expect("反序列化错误。");
             debug!("{r}");
@@ -75,7 +107,7 @@ impl IDSLoginImpl {
                     #[serde(rename = "errorMsg")]
                     error_msg: String,
                 }
-                let Tmp { error_msg } = verify_slider_captcha(&agent, v)?
+                let Tmp { error_msg } = ids_protocol::verify_slider_captcha(&agent, v)?
                     .into_json()
                     .expect("json parse failed.");
                 debug!("{error_msg}");
@@ -125,7 +157,7 @@ impl IDSLoginImpl {
             })
             .collect::<Vec<(_, _)>>();
         let password = {
-            let mut n = vec![*ENC_IV; 4].into_iter().flatten().collect::<Vec<_>>();
+            let mut n = vec![*X_L4RS_ENC_IV; 4].into_iter().flatten().collect::<Vec<_>>();
             let mut padded_pwd = pkcs7_pad::<16>(passwd)
                 .into_iter()
                 .flatten()
@@ -155,7 +187,31 @@ impl IDSLoginImpl {
         post_data.push(("password", &password));
         post_data.push(("remember_me", "true"));
         post_data.push(("captcha", ""));
-        let _ = crate::protocol::login(&agent, self.target, &post_data)?;
+        let _ = ids_protocol::login(&agent, self.target, &post_data)?;
         Ok(())
+    }
+}
+
+pub struct IDSSession {
+    agent: Agent,
+}
+
+impl Deref for IDSSession {
+    type Target = Agent;
+
+    fn deref(&self) -> &Self::Target {
+        &self.agent
+    }
+}
+impl IDSSession {
+    pub fn login(
+        account: &str,
+        passwd: &[u8],
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+    ) -> Result<Self, Error> {
+        let agent = crate::utils::build_agent();
+        let login_impl = IDSLoginImpl::TARGET_LEARNING;
+        let _ = login_impl.login(&agent, account, passwd, captcha_solver)?;
+        Ok(IDSSession { agent })
     }
 }

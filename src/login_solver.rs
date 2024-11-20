@@ -13,10 +13,11 @@
 //
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#![cfg(feature = "cxlib_login")]
 
-pub(crate) const ENC_KEY: &[u8; 16] = b"x_l4rsforxdsign.";
-use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, ENC_IV};
+#![cfg(feature = "cxlib_login_integrated")]
+
+const X_L4RS_ENC_KEY: &[u8; 16] = b"x_l4rsforxdsign.";
+use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, X_L4RS_ENC_IV};
 use crate::IDSLoginImpl;
 use cxlib_error::Error;
 #[cfg(feature = "cxlib_protocol")]
@@ -52,21 +53,21 @@ where
     }
 
     fn is_logged_in(&self, agent: &Agent) -> bool {
-        crate::protocol::is_logged_in(agent)
+        crate::protocol::ids::is_logged_in(agent)
     }
 
     fn login_s(&self, account: &str, enc_passwd: &str) -> Result<Agent, Error> {
         let passwd = aes_dec(
             &base64_dec(enc_passwd)
                 .map_err(|e| Error::LoginError(format!("密码解密出错：{e:?}")))?,
-            ENC_KEY,
-            ENC_IV,
+            X_L4RS_ENC_KEY,
+            X_L4RS_ENC_IV,
         )
         .map_err(|e| Error::LoginError(format!("密码解密出错：{e:?}")))?;
         #[cfg(not(feature = "cxlib_protocol"))]
-        let agent = IDSLoginImpl::build_agent();
+        let agent = crate::utils::build_agent();
         #[cfg(feature = "cxlib_protocol")]
-        let agent = IDSLoginImpl::build_agent_with_user_agent(&ProtocolItem::UserAgent.get());
+        let agent = crate::utils::build_agent_with_user_agent(&ProtocolItem::UserAgent.get());
         self.inner
             .login(&agent, account, &passwd, &self.captcha_solver)?;
         Ok(agent)
@@ -76,8 +77,8 @@ where
         let padded_pwd = pkcs7_pad::<16>(pwd.as_bytes());
         Ok(base64_enc(aes_enc(
             &padded_pwd.into_iter().flatten().collect::<Vec<_>>(),
-            ENC_KEY,
-            ENC_IV,
+            X_L4RS_ENC_KEY,
+            X_L4RS_ENC_IV,
         )))
     }
 }

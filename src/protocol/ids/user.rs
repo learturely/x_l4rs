@@ -14,7 +14,8 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::protocol::XL4rsProtocolItem;
+#![cfg(feature = "ids_login_impl")]
+use crate::protocol::ids::IDSProtocolItem;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use serde::Serialize;
@@ -31,7 +32,7 @@ pub fn get_user_conf(agent: &Agent) -> Result<ureq::Response, Box<ureq::Error>> 
         n: f64,
     }
     Ok(agent
-        .post(XL4rsProtocolItem::GetUserConf.get().as_str())
+        .post(IDSProtocolItem::GetUserConf.get().as_str())
         .send_json(Data {
             n: 0.12724911253015814, // 似乎没用。
         })?)
@@ -39,8 +40,8 @@ pub fn get_user_conf(agent: &Agent) -> Result<ureq::Response, Box<ureq::Error>> 
 
 #[cfg(test)]
 mod tests {
-    use log::info;
     use super::*;
+    use log::info;
     #[test]
     fn test_get_user_conf() {
         let r = get_user_conf(&Agent::new()).unwrap();

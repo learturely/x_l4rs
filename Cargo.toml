@@ -25,9 +25,12 @@ readme = "./README.md"
 repository = "https://github.com/learturely/x_l4rs"
 
 [features]
-default = []
-cxlib_integrated = ["cxlib_login", "cxlib_protocol_integrated"]
+default = ["ehall_login_impl", "ids_login_impl"]
+cxlib_integrated = ["cxlib_login_integrated", "cxlib_protocol_integrated"]
+cxlib_login_integrated = ["cxlib_login", "ids_login_impl"]
 cxlib_protocol_integrated = ["cxlib_protocol", "onceinit"]
+ehall_login_impl = ["ids_login_impl"]
+ids_login_impl = []
 
 [dependencies]
 base64 = "0.22"
@@ -35,6 +38,7 @@ cookie_store = "0.21"
 cxlib_imageproc = { git = "https://github.com/worksoup/cxlib.git" }
 cxlib_error = { git = "https://github.com/worksoup/cxlib.git" }
 cxlib_utils = { git = "https://github.com/worksoup/cxlib.git", features = ["pkcs7_pad"] }
+getset = "0.1"
 image = "0.25"
 log = "0.4"
 percent-encoding = "2.3"

@@ -14,15 +14,42 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-mod captcha;
 mod cry;
 
-pub use captcha::*;
 pub use cry::*;
+use ureq::{Agent, AgentBuilder};
 
 pub fn get_now_timestamp_mills() -> u128 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("系统时间异常。")
         .as_millis()
+}
+
+pub fn build_agent() -> Agent {
+    let cookie_store = cookie_store::CookieStore::new(None);
+    AgentBuilder::new()
+        .redirects(15)
+        .cookie_store(cookie_store)
+        .build()
+}
+pub fn build_agent_with_user_agent(ua: &str) -> Agent {
+    let cookie_store = cookie_store::CookieStore::new(None);
+    AgentBuilder::new()
+        .redirects(15)
+        .user_agent(ua)
+        .cookie_store(cookie_store)
+        .build()
+}
+
+pub fn time_it<R, F: FnOnce() -> R>(f: F) -> (R, u128) {
+    let start = std::time::Instant::now();
+    let r = f();
+    let elapsed = start.elapsed();
+    (r, elapsed.as_millis())
+}
+
+pub fn print_timed_result<T>(result: (T, u128)) -> T {
+    println!("{}", result.1);
+    result.0
 }

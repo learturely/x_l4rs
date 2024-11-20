@@ -14,7 +14,8 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::protocol::XL4rsProtocolItem;
+#![cfg(feature = "ids_login_impl")]
+use crate::protocol::ids::IDSProtocolItem;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use ureq::Agent;
@@ -27,7 +28,7 @@ pub fn check_need_captcha(
     Ok(agent
         .get(&format!(
             "{}?username={}&_={}",
-            XL4rsProtocolItem::CheckNeedCaptcha,
+            IDSProtocolItem::CheckNeedCaptcha,
             uname,
             time_stamp_mills
         ))
@@ -41,7 +42,7 @@ pub fn open_slider_captcha(
     Ok(agent
         .get(&format!(
             "{}?_={time_stamp_mills}",
-            XL4rsProtocolItem::OpenSliderCaptcha
+            IDSProtocolItem::OpenSliderCaptcha
         ))
         .call()?)
 }
@@ -50,7 +51,7 @@ pub fn verify_slider_captcha(
     move_length: u32,
 ) -> Result<ureq::Response, Box<ureq::Error>> {
     Ok(agent
-        .post(XL4rsProtocolItem::VerifySliderCaptcha.get().as_str())
+        .post(IDSProtocolItem::VerifySliderCaptcha.get().as_str())
         .set("Refer", "https://ids.xidian.edu.cn/authserver/login")
         .send_form(&[
             ("canvasLength", "280"),

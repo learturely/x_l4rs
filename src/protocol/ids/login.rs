@@ -14,7 +14,8 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{protocol::XL4rsProtocolItem, utils::percent_enc};
+#![cfg(feature = "ids_login_impl")]
+use crate::{protocol::ids::IDSProtocolItem, utils::percent_enc};
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use log::debug;
@@ -24,7 +25,7 @@ use ureq::{Agent, AgentBuilder};
 pub fn login_page(agent: &Agent, target: &str) -> Result<ureq::Response, Box<ureq::Error>> {
     let target = percent_enc(target);
     Ok(agent
-        .get(&format!("{}?service={target}", XL4rsProtocolItem::Login))
+        .get(&format!("{}?service={target}", IDSProtocolItem::Login))
         .call()?)
 }
 
@@ -48,7 +49,11 @@ pub fn login(
 ) -> Result<ureq::Response, Box<ureq::Error>> {
     let target = percent_enc(target);
     Ok(agent
-        .post(&format!("{}?service={}", XL4rsProtocolItem::Login, target))
+        .post(&format!(
+            "{}?service={}",
+            IDSProtocolItem::Login,
+            target
+        ))
         .send_form(data)?)
 }
 pub fn is_logged_in(agent: &Agent) -> bool {
@@ -59,7 +64,7 @@ pub fn is_logged_in(agent: &Agent) -> bool {
         .cookie_store(agent.cookie_store().deref().clone())
         .build();
     agent
-        .get(XL4rsProtocolItem::Authserver.get().as_str())
+        .get(IDSProtocolItem::Authserver.get().as_str())
         .call()
         .is_ok_and(|r| {
             let code = r.status();
@@ -70,7 +75,7 @@ pub fn is_logged_in(agent: &Agent) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::protocol::is_logged_in;
+    use crate::protocol::ids::is_logged_in;
     use log::info;
     use ureq::AgentBuilder;
 
