@@ -14,8 +14,6 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(feature = "cxlib_login_integrated")]
-
 const X_L4RS_ENC_KEY: &[u8; 16] = b"x_l4rsforxdsign.";
 use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, X_L4RS_ENC_IV};
 use crate::IDSLoginImpl;

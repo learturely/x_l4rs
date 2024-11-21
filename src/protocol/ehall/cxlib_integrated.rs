@@ -14,7 +14,6 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(feature = "cxlib_protocol_integrated")]
 use crate::protocol::ehall::EhallProtocolItem;
 use cxlib_protocol::{ProtocolDataTrait, ProtocolItemTrait, ProtocolTrait};
 use onceinit::OnceInit;

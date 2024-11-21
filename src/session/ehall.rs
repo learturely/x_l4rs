@@ -14,8 +14,6 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(feature = "ehall")]
-
 use crate::IDSLoginImpl;
 use cxlib_error::Error;
 use getset::Getters;
@@ -89,7 +87,7 @@ impl EhallSession {
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent();
         let login_impl = EhallLoginImpl::new();
-        let _ = login_impl.login(&agent, account, passwd, captcha_solver)?;
+        login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(EhallSession { agent })
     }
     pub fn use_app(&self, app_id: &str) -> Result<ureq::Response, Box<ureq::Error>> {

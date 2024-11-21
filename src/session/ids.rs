@@ -14,8 +14,6 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(feature = "ids")]
-
 use crate::{
     protocol::ids as ids_protocol,
     utils::{aes_enc, base64_dec, base64_enc, get_now_timestamp_mills, X_L4RS_ENC_IV},
@@ -92,22 +90,22 @@ impl IDSLoginImpl {
         passwd: &[u8],
         captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
     ) -> Result<(), Error> {
-        let page = ids_protocol::login_page(&agent, self.target)?
+        let page = ids_protocol::login_page(agent, self.target)?
             .into_string()
             .expect("登录页获取失败。");
         while let Ok(r) =
-            ids_protocol::check_need_captcha(&agent, account, get_now_timestamp_mills())
+            ids_protocol::check_need_captcha(agent, account, get_now_timestamp_mills())
         {
             let r = r.into_string().expect("反序列化错误。");
             debug!("{r}");
             if r.contains('t') {
-                let v = solve_captcha(&agent, captcha_solver);
+                let v = solve_captcha(agent, captcha_solver);
                 #[derive(Deserialize)]
                 struct Tmp {
                     #[serde(rename = "errorMsg")]
                     error_msg: String,
                 }
-                let Tmp { error_msg } = ids_protocol::verify_slider_captcha(&agent, v)?
+                let Tmp { error_msg } = ids_protocol::verify_slider_captcha(agent, v)?
                     .into_json()
                     .expect("json parse failed.");
                 debug!("{error_msg}");
@@ -157,7 +155,10 @@ impl IDSLoginImpl {
             })
             .collect::<Vec<(_, _)>>();
         let password = {
-            let mut n = vec![*X_L4RS_ENC_IV; 4].into_iter().flatten().collect::<Vec<_>>();
+            let mut n = vec![*X_L4RS_ENC_IV; 4]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
             let mut padded_pwd = pkcs7_pad::<16>(passwd)
                 .into_iter()
                 .flatten()
@@ -187,7 +188,7 @@ impl IDSLoginImpl {
         post_data.push(("password", &password));
         post_data.push(("remember_me", "true"));
         post_data.push(("captcha", ""));
-        let _ = ids_protocol::login(&agent, self.target, &post_data)?;
+        let _ = ids_protocol::login(agent, self.target, &post_data)?;
         Ok(())
     }
 }
@@ -211,7 +212,7 @@ impl IDSSession {
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent();
         let login_impl = IDSLoginImpl::TARGET_LEARNING;
-        let _ = login_impl.login(&agent, account, passwd, captcha_solver)?;
+        login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(IDSSession { agent })
     }
 }
