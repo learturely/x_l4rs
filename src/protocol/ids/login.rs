@@ -56,7 +56,7 @@ pub fn login(
         ))
         .send_form(data)?)
 }
-pub fn is_logged_in(agent: &Agent) -> bool {
+pub fn has_logged_in(agent: &Agent) -> bool {
     // TODO: UserAgent.
     // TODO: use ureq 3.x.
     let agent = AgentBuilder::new()
@@ -75,14 +75,14 @@ pub fn is_logged_in(agent: &Agent) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::protocol::ids::is_logged_in;
+    use crate::protocol::ids::has_logged_in;
     use log::info;
     use ureq::AgentBuilder;
 
     #[test]
     fn test_authserver() {
         let agent = AgentBuilder::new().redirects(0).build();
-        let r = is_logged_in(&agent);
+        let r = has_logged_in(&agent);
         info!("{r}");
     }
 }

@@ -17,6 +17,7 @@
 use crate::{
     protocol::ids as ids_protocol,
     utils::{aes_enc, base64_dec, base64_enc, get_now_timestamp_mills, X_L4RS_ENC_IV},
+    XL4rsSessionTrait,
 };
 use cxlib_error::Error;
 use cxlib_imageproc::image_from_bytes;
@@ -116,34 +117,43 @@ impl IDSLoginImpl {
                 break;
             }
         }
-        // 找到所需的 html 表单内容。
-        // form: id="pwdFromId" -- PC
-        // form: id="loginFromId" //id="pwdLoginDiv" -- Android
-        let form_begin = page
-            .find("id=\"pwdLoginDiv\"")
-            .or_else(|| page.find("id=\"pwdFromId\""))
-            .ok_or_else(|| Error::LoginError("登录页缺少内容".to_string()))?;
-        let html = &page[form_begin..];
-        let form_end = html.find("</form>").unwrap_or(html.len());
-        let html = &html[..form_end];
-        let form_begin = html.rfind("</div>").unwrap_or(0);
-        let html = &html[form_begin + 6..];
-        debug!("{html}");
-        let inputs = html.split("<input ");
+        /// 找到所需的 html 表单内容。
+        /// form: id="pwdFromId" -- PC
+        /// form: id="loginFromId" //id="pwdLoginDiv" -- Android
+        fn find_form_content(html: &str) -> Result<&str, Error> {
+            let form_begin = html
+                .find("id=\"pwdLoginDiv\"")
+                .or_else(|| html.find("id=\"pwdFromId\""))
+                .ok_or_else(|| Error::LoginError("登录页缺少内容".to_string()))?;
+            let html = &html[form_begin..];
+            let form_end = html.find("</form>").unwrap_or(html.len());
+            let html = &html[..form_end];
+            let form_begin = html.rfind("</div>").unwrap_or(0);
+            let html = &html[form_begin + 6..];
+            debug!("{html}");
+            Ok(html)
+        }
+        fn find_id_value_pair(input: &str) -> Option<(&str, &str)> {
+            let id_begin = input
+                .find("id=\"")
+                .or_else(|| Some(input.find("name=\"")? + 2))?;
+            let id = &input[id_begin + 4..];
+            let id_end = id.find("\"")?;
+            let id = &id[..id_end];
+            let f_begin = input.find("value=\"")?;
+            let f = &input[f_begin + 7..];
+            let f_end = f.find("\"")?;
+            let value = &f[..f_end];
+            // TODO: this debug print MAYBE DANGEROUS!!!
+            debug!("{id:?}: {value:?}");
+            Some((id, value))
+        }
+        let inputs = find_form_content(&page)?.split("<input ");
         let mut key = None;
         let mut post_data = inputs
             .into_iter()
             .filter_map(|s| {
-                let id_begin = s.find("id=\"").or_else(|| Some(s.find("name=\"")? + 2))?;
-                let id = &s[id_begin + 4..];
-                let id_end = id.find("\"")?;
-                let id = &id[..id_end];
-                let f_begin = s.find("value=\"")?;
-                let f = &s[f_begin + 7..];
-                let f_end = f.find("\"")?;
-                let value = &f[..f_end];
-                // TODO: this debug print MAYBE DANGEROUS!!!
-                debug!("{id:?}: {value:?}");
+                let (id, value) = find_id_value_pair(s)?;
                 if id == "pwdEncryptSalt" {
                     let mut k = [0; 16];
                     k.copy_from_slice(value.as_bytes());
@@ -205,14 +215,30 @@ impl Deref for IDSSession {
     }
 }
 impl IDSSession {
+    pub fn login_with_user_agent(
+        account: &str,
+        passwd: &[u8],
+        ua: &str,
+        login_impl: &IDSLoginImpl,
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+    ) -> Result<Self, Error> {
+        let agent = crate::utils::build_agent_with_user_agent(ua);
+        login_impl.login(&agent, account, passwd, captcha_solver)?;
+        Ok(IDSSession { agent })
+    }
     pub fn login(
         account: &str,
         passwd: &[u8],
+        login_impl: &IDSLoginImpl,
         captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent();
-        let login_impl = IDSLoginImpl::TARGET_LEARNING;
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(IDSSession { agent })
+    }
+}
+impl XL4rsSessionTrait for IDSSession {
+    fn has_logged_in(&self) -> bool {
+        crate::protocol::ids::has_logged_in(&self.agent)
     }
 }

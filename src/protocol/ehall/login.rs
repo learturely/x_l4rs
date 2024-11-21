@@ -20,7 +20,7 @@ use cxlib_protocol::ProtocolItemTrait;
 use serde::Deserialize;
 use ureq::Agent;
 
-pub fn is_logged_in(agent: &Agent) -> bool {
+pub fn has_logged_in(agent: &Agent) -> bool {
     agent
         .get(EhallProtocolItem::UserFavoriteApps.get().as_str())
         .call()

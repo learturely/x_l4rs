@@ -51,7 +51,7 @@ where
     }
 
     fn is_logged_in(&self, agent: &Agent) -> bool {
-        crate::protocol::ids::is_logged_in(agent)
+        crate::protocol::ids::has_logged_in(agent)
     }
 
     fn login_s(&self, account: &str, enc_passwd: &str) -> Result<Agent, Error> {

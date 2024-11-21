@@ -16,10 +16,17 @@
 
 #[cfg(feature = "ehall")]
 mod ehall;
+
 #[cfg(feature = "ehall")]
 pub use ehall::*;
+use std::ops::Deref;
+use ureq::Agent;
 #[cfg(feature = "ids")]
 mod ids;
 
 #[cfg(feature = "ids")]
 pub use ids::*;
+
+pub trait XL4rsSessionTrait: Deref<Target = Agent> {
+    fn has_logged_in(&self) -> bool;
+}

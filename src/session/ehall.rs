@@ -14,7 +14,7 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::IDSLoginImpl;
+use crate::{IDSLoginImpl, XL4rsSessionTrait};
 use cxlib_error::Error;
 use getset::Getters;
 use image::DynamicImage;
@@ -80,13 +80,24 @@ pub struct App {
     description: Option<String>,
 }
 impl EhallSession {
+    pub fn login_with_user_agent(
+        account: &str,
+        passwd: &[u8],
+        ua: &str,
+        login_impl: &EhallLoginImpl,
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+    ) -> Result<Self, Error> {
+        let agent = crate::utils::build_agent_with_user_agent(ua);
+        login_impl.login(&agent, account, passwd, captcha_solver)?;
+        Ok(EhallSession { agent })
+    }
     pub fn login(
         account: &str,
         passwd: &[u8],
+        login_impl: &EhallLoginImpl,
         captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent();
-        let login_impl = EhallLoginImpl::new();
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(EhallSession { agent })
     }
@@ -113,5 +124,10 @@ impl EhallSession {
         let TmpData { has_login, data } = r.into_json().expect("failed to parse json.");
         assert!(has_login);
         Ok(data)
+    }
+}
+impl XL4rsSessionTrait for EhallSession {
+    fn has_logged_in(&self) -> bool {
+        crate::protocol::ehall::has_logged_in(&self.agent)
     }
 }
