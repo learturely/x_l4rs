@@ -23,9 +23,9 @@ extern crate core;
 pub mod protocol;
 pub mod utils;
 
-#[cfg(any(feature = "ehall_login_impl", feature = "ids_login_impl"))]
+#[cfg(any(feature = "ehall", feature = "ids"))]
 mod session;
-#[cfg(any(feature = "ehall_login_impl", feature = "ids_login_impl"))]
+#[cfg(any(feature = "ehall", feature = "ids"))]
 pub use session::*;
 
 #[cfg(feature = "cxlib_login_integrated")]

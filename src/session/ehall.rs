@@ -13,7 +13,8 @@
 //
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#![cfg(feature = "ehall_login_impl")]
+
+#![cfg(feature = "ehall")]
 
 use crate::IDSLoginImpl;
 use cxlib_error::Error;

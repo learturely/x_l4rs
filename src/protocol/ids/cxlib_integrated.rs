@@ -53,21 +53,19 @@ impl ProtocolItemTrait for IDSProtocolItem {
 impl Default for IDSProtocolData {
     fn default() -> Self {
         IDSProtocolData {
-            login: Some(ProtocolItemTrait::get_default(&IDSProtocolItem::LOGIN)),
+            login: Some(ProtocolItemTrait::get_default(&IDSProtocolItem::Login)),
             check_need_captcha: Some(ProtocolItemTrait::get_default(
-                &IDSProtocolItem::CHECK_NEED_CAPTCHA,
+                &IDSProtocolItem::CheckNeedCaptcha,
             )),
             verify_slider_captcha: Some(ProtocolItemTrait::get_default(
-                &IDSProtocolItem::VERIFY_SLIDER_CAPTCHA,
+                &IDSProtocolItem::VerifySliderCaptcha,
             )),
             open_slider_captcha: Some(ProtocolItemTrait::get_default(
-                &IDSProtocolItem::OPEN_SLIDER_CAPTCHA,
+                &IDSProtocolItem::OpenSliderCaptcha,
             )),
-            authserver: Some(ProtocolItemTrait::get_default(
-                &IDSProtocolItem::AUTHSERVER,
-            )),
+            authserver: Some(ProtocolItemTrait::get_default(&IDSProtocolItem::Authserver)),
             get_user_conf: Some(ProtocolItemTrait::get_default(
-                &IDSProtocolItem::GET_USER_CONF,
+                &IDSProtocolItem::GetUserConf,
             )),
         }
     }
@@ -98,9 +96,7 @@ impl ProtocolDataTrait for IDSProtocolData {
         match t {
             IDSProtocolItem::Login => do_something(&mut self.login),
             IDSProtocolItem::CheckNeedCaptcha => do_something(&mut self.check_need_captcha),
-            IDSProtocolItem::VerifySliderCaptcha => {
-                do_something(&mut self.verify_slider_captcha)
-            }
+            IDSProtocolItem::VerifySliderCaptcha => do_something(&mut self.verify_slider_captcha),
 
             IDSProtocolItem::OpenSliderCaptcha => do_something(&mut self.open_slider_captcha),
             IDSProtocolItem::Authserver => do_something(&mut self.authserver),

@@ -14,12 +14,12 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#[cfg(feature = "ehall_login_impl")]
+#[cfg(feature = "ehall")]
 mod ehall;
-#[cfg(feature = "ehall_login_impl")]
+#[cfg(feature = "ehall")]
 pub use ehall::*;
-#[cfg(feature = "ids_login_impl")]
+#[cfg(feature = "ids")]
 mod ids;
 
-#[cfg(feature = "ids_login_impl")]
+#[cfg(feature = "ids")]
 pub use ids::*;

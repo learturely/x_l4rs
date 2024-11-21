@@ -14,7 +14,7 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#[cfg(feature = "ehall_login_impl")]
+#[cfg(feature = "ehall")]
 pub mod ehall;
-#[cfg(feature = "ids_login_impl")]
+#[cfg(feature = "ids")]
 pub mod ids;

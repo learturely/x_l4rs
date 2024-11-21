@@ -14,7 +14,7 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg(feature = "ids_login_impl")]
+#![cfg(feature = "ids")]
 use crate::protocol::ids::IDSProtocolItem;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;

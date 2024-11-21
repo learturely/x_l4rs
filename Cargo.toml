@@ -25,27 +25,27 @@ readme = "./README.md"
 repository = "https://github.com/learturely/x_l4rs"
 
 [features]
-default = ["ehall_login_impl", "ids_login_impl"]
+default = ["ehall", "ids"]
 cxlib_integrated = ["cxlib_login_integrated", "cxlib_protocol_integrated"]
-cxlib_login_integrated = ["cxlib_login", "ids_login_impl"]
+cxlib_login_integrated = ["cxlib_login", "ids"]
 cxlib_protocol_integrated = ["cxlib_protocol", "onceinit"]
-ehall_login_impl = ["ids_login_impl"]
-ids_login_impl = []
+ehall = ["ids", "getset"]
+ids = ["cxlib_error", "cxlib_utils", "rand"]
 
 [dependencies]
 base64 = "0.22"
 cookie_store = "0.21"
 cxlib_imageproc = { git = "https://github.com/worksoup/cxlib.git" }
-cxlib_error = { git = "https://github.com/worksoup/cxlib.git" }
-cxlib_utils = { git = "https://github.com/worksoup/cxlib.git", features = ["pkcs7_pad"] }
-getset = "0.1"
 image = "0.25"
 log = "0.4"
 percent-encoding = "2.3"
 rust-crypto = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 ureq = { version = "2.10", features = ["cookies", "json"] }
-rand = "0.8"
-cxlib_protocol = { git = "https://github.com/worksoup/cxlib.git", optional = true }
+cxlib_error = { git = "https://github.com/worksoup/cxlib.git", optional = true }
 cxlib_login = { git = "https://github.com/worksoup/cxlib.git", optional = true }
+cxlib_protocol = { git = "https://github.com/worksoup/cxlib.git", optional = true }
+cxlib_utils = { git = "https://github.com/worksoup/cxlib.git", features = ["pkcs7_pad"], optional = true }
+getset = { version = "0.1", optional = true }
 onceinit = { version = "0.0.4", optional = true }
+rand = { version = "0.8", optional = true }
