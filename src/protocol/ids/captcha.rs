@@ -51,7 +51,7 @@ pub fn verify_slider_captcha(
     move_length: u32,
 ) -> Result<ureq::Response, Box<ureq::Error>> {
     Ok(agent
-        .post(IDSProtocolItem::VerifySliderCaptcha.get().as_str())
+        .post(IDSProtocolItem::VerifySliderCaptcha.get().as_ref())
         .set("Refer", "https://ids.xidian.edu.cn/authserver/login")
         .send_form(&[
             ("canvasLength", "280"),

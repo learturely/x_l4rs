@@ -22,7 +22,7 @@ use ureq::Agent;
 
 pub fn has_logged_in(agent: &Agent) -> bool {
     agent
-        .get(EhallProtocolItem::UserFavoriteApps.get().as_str())
+        .get(EhallProtocolItem::UserFavoriteApps.get().as_ref())
         .call()
         .is_ok_and(|r| {
             #[derive(Deserialize)]

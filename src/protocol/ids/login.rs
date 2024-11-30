@@ -49,11 +49,7 @@ pub fn login(
 ) -> Result<ureq::Response, Box<ureq::Error>> {
     let target = percent_enc(target);
     Ok(agent
-        .post(&format!(
-            "{}?service={}",
-            IDSProtocolItem::Login,
-            target
-        ))
+        .post(&format!("{}?service={}", IDSProtocolItem::Login, target))
         .send_form(data)?)
 }
 pub fn has_logged_in(agent: &Agent) -> bool {
@@ -64,7 +60,7 @@ pub fn has_logged_in(agent: &Agent) -> bool {
         .cookie_store(agent.cookie_store().deref().clone())
         .build();
     agent
-        .get(IDSProtocolItem::Authserver.get().as_str())
+        .get(IDSProtocolItem::Authserver.get().as_ref())
         .call()
         .is_ok_and(|r| {
             let code = r.status();

@@ -32,7 +32,7 @@ pub fn get_user_conf(agent: &Agent) -> Result<ureq::Response, Box<ureq::Error>> 
         n: f64,
     }
     Ok(agent
-        .post(IDSProtocolItem::GetUserConf.get().as_str())
+        .post(IDSProtocolItem::GetUserConf.get().as_ref())
         .send_json(Data {
             n: 0.12724911253015814, // 似乎没用。
         })?)

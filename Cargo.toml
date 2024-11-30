@@ -47,5 +47,5 @@ cxlib_login = { git = "https://github.com/worksoup/cxlib.git", optional = true }
 cxlib_protocol = { git = "https://github.com/worksoup/cxlib.git", optional = true }
 cxlib_utils = { git = "https://github.com/worksoup/cxlib.git", features = ["pkcs7_pad"], optional = true }
 getset = { version = "0.1", optional = true }
-onceinit = { version = "0.0.4", optional = true }
+onceinit = { version = "0.0.5", optional = true }
 rand = { version = "0.8", optional = true }

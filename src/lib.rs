@@ -14,10 +14,6 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![feature(vec_into_raw_parts)]
-#![feature(let_chains)]
-#![feature(str_as_str)]
-#![feature(adt_const_params)]
 extern crate core;
 
 pub mod protocol;
