@@ -14,19 +14,22 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#[cfg(feature = "ehall")]
-mod ehall;
-
-#[cfg(feature = "ehall")]
-pub use ehall::*;
 use std::ops::Deref;
 use ureq::Agent;
+#[cfg(feature = "ehall")]
+mod ehall;
+#[cfg(feature = "ehall")]
+pub use ehall::*;
 #[cfg(feature = "ids")]
 mod ids;
-
 #[cfg(feature = "ids")]
 pub use ids::*;
+#[cfg(feature = "rsbbs")]
+mod rsbbs;
+#[cfg(feature = "rsbbs")]
+pub use rsbbs::*;
 
 pub trait XL4rsSessionTrait: Deref<Target = Agent> {
     fn has_logged_in(&self) -> bool;
 }
+pub static LOGIN_RETRY_TIMES: usize = 5;

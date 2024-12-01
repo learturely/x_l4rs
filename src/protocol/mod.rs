@@ -18,3 +18,5 @@
 pub mod ehall;
 #[cfg(feature = "ids")]
 pub mod ids;
+#[cfg(feature = "rsbbs")]
+pub mod rsbbs;

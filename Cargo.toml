@@ -25,19 +25,22 @@ readme = "./README.md"
 repository = "https://github.com/learturely/x_l4rs"
 
 [features]
-default = ["ehall", "ids"]
+default = ["ehall", "ids", "rsbbs"]
 cxlib_integrated = ["cxlib_login_integrated", "cxlib_protocol_integrated"]
 cxlib_login_integrated = ["cxlib_login", "ids"]
 cxlib_protocol_integrated = ["cxlib_protocol", "onceinit"]
 ehall = ["ids", "getset"]
 ids = ["cxlib_error", "cxlib_utils", "rand"]
+rsbbs = ["cxlib_error", "hex", "rand", "md5"]
 
 [dependencies]
 base64 = "0.22"
 cookie_store = "0.21"
 cxlib_imageproc = { git = "https://github.com/worksoup/cxlib.git" }
+hex = { version = "0.4", optional = true }
 image = "0.25"
 log = "0.4"
+md5 = { version = "0.7", optional = true }
 percent-encoding = "2.3"
 rust-crypto = "0.2"
 serde = { version = "1.0", features = ["derive"] }

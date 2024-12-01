@@ -89,7 +89,10 @@ pub fn base64_enc<T: AsRef<[u8]>>(input: T) -> String {
 pub fn base64_dec<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, DecodeError> {
     base64::engine::general_purpose::STANDARD.decode(input)
 }
-
+#[cfg(feature = "md5")]
+pub fn md5_enc<T: AsRef<[u8]>>(input: T) -> [u8; 16] {
+    md5::compute(input).0
+}
 pub fn flatten_bytes<const BLOCK_SIZE: usize>(mut blocks: Vec<[u8; BLOCK_SIZE]>) -> Vec<u8> {
     let (p, l, c) = (blocks.as_mut_ptr(), blocks.len(), blocks.capacity());
     unsafe { Vec::from_raw_parts(p as *mut u8, l * BLOCK_SIZE, c * BLOCK_SIZE) }

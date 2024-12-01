@@ -15,8 +15,11 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod cry;
+mod find_element;
 
 pub use cry::*;
+pub(crate) use find_element::*;
+
 use ureq::{Agent, AgentBuilder};
 
 pub fn get_now_timestamp_mills() -> u128 {

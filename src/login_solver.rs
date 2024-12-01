@@ -26,14 +26,14 @@ use ureq::Agent;
 
 pub struct XL4rsLoginSolver<CaptchaSolver>
 where
-    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> u32,
+    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
 {
     inner: IDSLoginImpl,
     captcha_solver: CaptchaSolver,
 }
 impl<CaptchaSolver> XL4rsLoginSolver<CaptchaSolver>
 where
-    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> u32,
+    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
 {
     pub fn new(inner: IDSLoginImpl, captcha_solver: CaptchaSolver) -> Self {
         XL4rsLoginSolver {
@@ -44,7 +44,7 @@ where
 }
 impl<CaptchaSolver> cxlib_login::LoginSolverTrait for XL4rsLoginSolver<CaptchaSolver>
 where
-    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> u32 + Send + Sync + 'static,
+    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error> + Send + Sync + 'static,
 {
     fn login_type(&self) -> &str {
         "xd"

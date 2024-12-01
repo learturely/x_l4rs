@@ -85,7 +85,7 @@ impl EhallSession {
         passwd: &[u8],
         ua: &str,
         login_impl: &EhallLoginImpl,
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent_with_user_agent(ua);
         login_impl.login(&agent, account, passwd, captcha_solver)?;
@@ -95,7 +95,7 @@ impl EhallSession {
         account: &str,
         passwd: &[u8],
         login_impl: &EhallLoginImpl,
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent();
         login_impl.login(&agent, account, passwd, captcha_solver)?;

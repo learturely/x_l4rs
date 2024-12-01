@@ -14,16 +14,17 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::utils::{find_form_content, find_id_value_pair};
 use crate::{
     protocol::ids as ids_protocol,
     utils::{aes_enc, base64_dec, base64_enc, get_now_timestamp_mills, X_L4RS_ENC_IV},
-    XL4rsSessionTrait,
+    XL4rsSessionTrait, LOGIN_RETRY_TIMES,
 };
 use cxlib_error::Error;
 use cxlib_imageproc::image_from_bytes;
 use cxlib_utils::pkcs7_pad;
 use image::DynamicImage;
-use log::debug;
+use log::{debug, warn};
 use rand::Rng;
 use serde::Deserialize;
 use std::ops::Deref;
@@ -31,8 +32,8 @@ use ureq::Agent;
 
 fn solve_captcha(
     agent: &Agent,
-    captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
-) -> u32 {
+    captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
+) -> Result<u32, Error> {
     #[derive(Deserialize)]
     struct Images {
         #[serde(rename = "smallImage")]
@@ -43,18 +44,17 @@ fn solve_captcha(
     let Images {
         small_image,
         big_image,
-    } = ids_protocol::open_slider_captcha(agent, get_now_timestamp_mills())
-        .expect("Failed to load captcha slider")
+    } = ids_protocol::open_slider_captcha(agent, get_now_timestamp_mills())?
         .into_json()
         .expect("Failed to parse captcha slider");
     let small_image = base64_dec(small_image).expect("Failed to base64 decode captcha small image");
     let big_image = base64_dec(big_image).expect("Failed to base64 decode captcha big image");
     let big_image = image_from_bytes(big_image);
     let small_image = image_from_bytes(small_image);
-    let v = captcha_solver(&big_image, &small_image);
+    let v = captcha_solver(&big_image, &small_image)?;
     let r = v * 280 / big_image.width();
     debug!("{v}, {r}");
-    r
+    Ok(r)
 }
 #[derive(Eq, PartialEq)]
 pub struct IDSLoginImpl {
@@ -80,7 +80,7 @@ impl IDSLoginImpl {
         captcha_solver: CaptchaSolver,
     ) -> crate::XL4rsLoginSolver<CaptchaSolver>
     where
-        CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> u32,
+        CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
     {
         crate::XL4rsLoginSolver::new(self, captcha_solver)
     }
@@ -89,71 +89,62 @@ impl IDSLoginImpl {
         agent: &Agent,
         account: &str,
         passwd: &[u8],
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
     ) -> Result<(), Error> {
         let page = ids_protocol::login_page(agent, self.target)?
             .into_string()
             .expect("登录页获取失败。");
-        while let Ok(r) =
-            ids_protocol::check_need_captcha(agent, account, get_now_timestamp_mills())
-        {
-            let r = r.into_string().expect("反序列化错误。");
-            debug!("{r}");
-            if r.contains('t') {
-                let v = solve_captcha(agent, captcha_solver);
-                #[derive(Deserialize)]
-                struct Tmp {
-                    #[serde(rename = "errorMsg")]
-                    error_msg: String,
-                }
-                let Tmp { error_msg } = ids_protocol::verify_slider_captcha(agent, v)?
-                    .into_json()
-                    .expect("json parse failed.");
-                debug!("{error_msg}");
-                if error_msg == "success" {
+        for i in 0..=LOGIN_RETRY_TIMES {
+            let r = ids_protocol::check_need_captcha(agent, account, get_now_timestamp_mills());
+            let r = r
+                .map_err(Error::from)
+                .and_then(|r| {
+                    let r = r.into_string().expect("反序列化错误。");
+                    debug!("{r}");
+                    if r.contains('t') {
+                        #[derive(Deserialize)]
+                        struct Tmp {
+                            #[serde(rename = "errorMsg")]
+                            error_msg: String,
+                        }
+                        let v = solve_captcha(agent, captcha_solver)?;
+                        let Tmp { error_msg } = ids_protocol::verify_slider_captcha(agent, v)?
+                            .into_json()
+                            .expect("json parse failed.");
+                        debug!("{error_msg}");
+                        if error_msg == "success" {
+                            Ok(())
+                        } else {
+                            Err(Error::LoginError(format!(
+                                "滑块验证失败：{error_msg}，请重新登录。"
+                            )))
+                        }
+                    } else {
+                        Ok(())
+                    }
+                })
+                .map_err(|e| Error::LoginError(format!("滑块验证失败：{e}，请重新登录。")));
+            match r {
+                Ok(_) => {
                     break;
                 }
-            } else {
-                break;
+                Err(e) => {
+                    if i == LOGIN_RETRY_TIMES {
+                        return Err(e);
+                    } else {
+                        warn!("{e}");
+                        continue;
+                    }
+                }
             }
         }
-        /// 找到所需的 html 表单内容。
-        /// form: id="pwdFromId" -- PC
-        /// form: id="loginFromId" //id="pwdLoginDiv" -- Android
-        fn find_form_content(html: &str) -> Result<&str, Error> {
-            let form_begin = html
-                .find("id=\"pwdLoginDiv\"")
-                .or_else(|| html.find("id=\"pwdFromId\""))
-                .ok_or_else(|| Error::LoginError("登录页缺少内容".to_string()))?;
-            let html = &html[form_begin..];
-            let form_end = html.find("</form>").unwrap_or(html.len());
-            let html = &html[..form_end];
-            let form_begin = html.rfind("</div>").unwrap_or(0);
-            let html = &html[form_begin + 6..];
-            debug!("{html}");
-            Ok(html)
-        }
-        fn find_id_value_pair(input: &str) -> Option<(&str, &str)> {
-            let id_begin = input
-                .find("id=\"")
-                .or_else(|| Some(input.find("name=\"")? + 2))?;
-            let id = &input[id_begin + 4..];
-            let id_end = id.find("\"")?;
-            let id = &id[..id_end];
-            let f_begin = input.find("value=\"")?;
-            let f = &input[f_begin + 7..];
-            let f_end = f.find("\"")?;
-            let value = &f[..f_end];
-            // TODO: this debug print MAYBE DANGEROUS!!!
-            debug!("{id:?}: {value:?}");
-            Some((id, value))
-        }
-        let inputs = find_form_content(&page)?.split("<input ");
+        let inputs =
+            find_form_content(&["id=\"pwdLoginDiv\"", "id=\"pwdFromId\""], &page)?.split("<input ");
         let mut key = None;
         let mut post_data = inputs
             .into_iter()
             .filter_map(|s| {
-                let (id, value) = find_id_value_pair(s)?;
+                let (id, value) = find_id_value_pair(&["id=\"", "name=\""], s).ok()?;
                 if id == "pwdEncryptSalt" {
                     let mut k = [0; 16];
                     k.copy_from_slice(value.as_bytes());
@@ -220,7 +211,7 @@ impl IDSSession {
         passwd: &[u8],
         ua: &str,
         login_impl: &IDSLoginImpl,
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent_with_user_agent(ua);
         login_impl.login(&agent, account, passwd, captcha_solver)?;
@@ -230,7 +221,7 @@ impl IDSSession {
         account: &str,
         passwd: &[u8],
         login_impl: &IDSLoginImpl,
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> u32,
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
     ) -> Result<Self, Error> {
         let agent = crate::utils::build_agent();
         login_impl.login(&agent, account, passwd, captcha_solver)?;
