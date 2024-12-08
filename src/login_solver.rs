@@ -15,9 +15,11 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 const X_L4RS_ENC_KEY: &[u8; 16] = b"x_l4rsforxdsign.";
-use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, X_L4RS_ENC_IV};
-use crate::IDSLoginImpl;
-use cxlib_error::Error;
+use crate::{
+    utils::{aes_dec, aes_enc, base64_dec, base64_enc, X_L4RS_ENC_IV},
+    IDSLoginImpl,
+};
+use cxlib_error::{CaptchaError, LoginError};
 #[cfg(feature = "cxlib_protocol")]
 use cxlib_protocol::{ProtocolItem, ProtocolItemTrait};
 use cxlib_utils::pkcs7_pad;
@@ -26,14 +28,14 @@ use ureq::Agent;
 
 pub struct XL4rsLoginSolver<CaptchaSolver>
 where
-    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
+    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
 {
     inner: IDSLoginImpl,
     captcha_solver: CaptchaSolver,
 }
 impl<CaptchaSolver> XL4rsLoginSolver<CaptchaSolver>
 where
-    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
+    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
 {
     pub fn new(inner: IDSLoginImpl, captcha_solver: CaptchaSolver) -> Self {
         XL4rsLoginSolver {
@@ -42,9 +44,10 @@ where
         }
     }
 }
-impl<CaptchaSolver> cxlib_login::LoginSolverTrait for XL4rsLoginSolver<CaptchaSolver>
+impl<CaptchaSolver> cxlib_user::LoginSolverTrait for XL4rsLoginSolver<CaptchaSolver>
 where
-    CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error> + Send + Sync + 'static,
+    CaptchaSolver:
+        Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError> + Send + Sync + 'static,
 {
     fn login_type(&self) -> &str {
         "xd"
@@ -54,14 +57,14 @@ where
         crate::protocol::ids::has_logged_in(agent)
     }
 
-    fn login_s(&self, account: &str, enc_passwd: &str) -> Result<Agent, Error> {
+    fn login_s(&self, account: &str, enc_passwd: &str) -> Result<Agent, LoginError> {
         let passwd = aes_dec(
             &base64_dec(enc_passwd)
-                .map_err(|e| Error::LoginError(format!("密码解密出错：{e:?}")))?,
+                .map_err(|e| LoginError::CryptoError(format!("密码解密出错：{e:?}")))?,
             X_L4RS_ENC_KEY,
             X_L4RS_ENC_IV,
         )
-        .map_err(|e| Error::LoginError(format!("密码解密出错：{e:?}")))?;
+        .map_err(|e| LoginError::CryptoError(format!("密码解密出错：{e:?}")))?;
         #[cfg(not(feature = "cxlib_protocol"))]
         let agent = crate::utils::build_agent();
         #[cfg(feature = "cxlib_protocol")]
@@ -71,7 +74,7 @@ where
         Ok(agent)
     }
 
-    fn pwd_enc(&self, pwd: String) -> Result<String, Error> {
+    fn pwd_enc(&self, pwd: String) -> Result<String, LoginError> {
         let padded_pwd = pkcs7_pad::<16>(pwd.as_bytes());
         Ok(base64_enc(aes_enc(
             &padded_pwd.into_iter().flatten().collect::<Vec<_>>(),

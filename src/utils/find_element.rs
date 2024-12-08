@@ -14,7 +14,7 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use cxlib_error::Error;
+use cxlib_error::LoginError;
 use log::debug;
 
 /// 找到所需的 html 表单内容。
@@ -23,8 +23,8 @@ use log::debug;
 /// ``` text
 /// <form ...> <div>...</div> </form>
 /// ```
-pub fn find_form_content<'a>(ident: &[&str], html: &'a str) -> Result<&'a str, Error> {
-    let mut form_begin = Err(Error::LoginError("登录页缺少表单内容".to_string()));
+pub fn find_form_content<'a>(ident: &[&str], html: &'a str) -> Result<&'a str, LoginError> {
+    let mut form_begin = Err(LoginError::ServerError("登录页缺少表单内容".to_string()));
     for ident in ident {
         debug!("{ident}");
         if let Some(s) = html.find(ident) {
@@ -43,7 +43,10 @@ pub fn find_form_content<'a>(ident: &[&str], html: &'a str) -> Result<&'a str, E
 /// ``` html
 /// <input id="..." name= "..." value="..."/>
 /// ```
-pub fn find_id_value_pair<'a>(ident: &[&str], input: &'a str) -> Result<(&'a str, &'a str), Error> {
+pub fn find_id_value_pair<'a>(
+    ident: &[&str],
+    input: &'a str,
+) -> Result<(&'a str, &'a str), LoginError> {
     fn find_id_value_pair_internal<'a>(
         ident: &[&str],
         input: &'a str,
@@ -66,11 +69,11 @@ pub fn find_id_value_pair<'a>(ident: &[&str], input: &'a str) -> Result<(&'a str
         Some((id, value))
     }
     find_id_value_pair_internal(ident, input)
-        .ok_or_else(|| Error::LoginError("登录页缺少内容".to_string()))
+        .ok_or_else(|| LoginError::ServerError("登录页缺少内容".to_string()))
 }
 #[cfg(feature = "rsbbs")]
 pub(crate) mod rsbbs {
-    use cxlib_error::Error;
+    use cxlib_error::{CaptchaError, LoginError};
     use std::ops::Range;
 
     /// 查找 `id_hash`, 该值与验证码相关。
@@ -84,7 +87,7 @@ pub(crate) mod rsbbs {
         Some(id_hash)
     }
     /// updateseccode 函数返回的数据中，包含一个 <img> 元素，其 id 为 "vseccode_{id_hash}".
-    pub fn find_vcode_img_url<'a>(id_hash: &str, html: &'a str) -> Result<&'a str, Error> {
+    pub fn find_vcode_img_url<'a>(id_hash: &str, html: &'a str) -> Result<&'a str, LoginError> {
         fn find_vcode_img_url_internal<'a>(id_hash: &str, html: &'a str) -> Option<&'a str> {
             let span_s = html.find(&format!("vseccode_{id_hash}"))?;
             let html = &html[span_s..];
@@ -94,11 +97,14 @@ pub(crate) mod rsbbs {
             let html = &html[..img_e];
             Some(html)
         }
-        find_vcode_img_url_internal(id_hash, html)
-            .ok_or_else(|| Error::LoginError("未找到验证码图片，跳过下载。".to_owned()))
+        find_vcode_img_url_internal(id_hash, html).ok_or_else(|| {
+            LoginError::CaptchaError(CaptchaError::Canceled(
+                "未找到验证码图片，跳过下载。".to_owned(),
+            ))
+        })
     }
     /// 登录相关，该值用来确定 form id, 为 `loginform_{login_hash}`.
-    pub fn find_login_hash(html: &str) -> Result<Range<usize>, Error> {
+    pub fn find_login_hash(html: &str) -> Result<Range<usize>, LoginError> {
         pub fn find_login_hash_internal(html: &str) -> Option<Range<usize>> {
             let s = html.find("loginhash=")? + 10;
             let login_hash = &html[s..];
@@ -112,18 +118,18 @@ pub(crate) mod rsbbs {
             }
         }
         find_login_hash_internal(html)
-            .ok_or_else(|| Error::LoginError("未找到 `login_hash`.".to_owned()))
+            .ok_or_else(|| LoginError::ServerError("未找到 `login_hash`.".to_owned()))
     }
     /// 复用了 login_hash 的范围，因为该值出现在 url 内。
     ///
     /// 注意需要将 `&amp;` 转义为 `&`.
-    pub fn find_login_url(login_hash_range: Range<usize>, html: &str) -> Result<&str, Error> {
+    pub fn find_login_url(login_hash_range: Range<usize>, html: &str) -> Result<&str, LoginError> {
         fn find_login_url_internal(login_hash_range: Range<usize>, html: &str) -> Option<&str> {
             let html = &html[..login_hash_range.end];
             let s = html.rfind("action=\"")? + 8;
             Some(&html[s..])
         }
         find_login_url_internal(login_hash_range, html)
-            .ok_or_else(|| Error::LoginError("未找到登录地址。".to_owned()))
+            .ok_or_else(|| LoginError::ServerError("未找到登录地址。".to_owned()))
     }
 }

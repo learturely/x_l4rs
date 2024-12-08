@@ -20,7 +20,7 @@ use crate::{
     utils::md5_enc,
     XL4rsSessionTrait, LOGIN_RETRY_TIMES,
 };
-use cxlib_error::Error;
+use cxlib_error::{CaptchaError, LoginError};
 use image::DynamicImage;
 use log::{debug, warn};
 use std::ops::Deref;
@@ -91,15 +91,15 @@ impl RSBBSLoginImpl<'_> {
         agent: &Agent,
         uname: &str,
         passwd: &[u8],
-        vcode_solver: &impl Fn(&DynamicImage) -> Result<String, Error>,
-    ) -> Result<(), Error> {
+        vcode_solver: &impl Fn(&DynamicImage) -> Result<String, CaptchaError>,
+    ) -> Result<(), LoginError> {
         let login_page = login_page(agent)?;
         let referer = login_page.get_url().to_string();
         let html = login_page
             .into_string()
             .expect("Failed to convert Response into String.");
         let id_hash = find_id_hash(&html)
-            .ok_or_else(|| Error::LoginError("未找到 `id_hash`, 跳过下载。".to_owned()))?;
+            .ok_or_else(|| LoginError::ServerError("未找到 `id_hash`, 跳过下载。".to_owned()))?;
         let r = update_sec_code::<true>(agent, id_hash, &referer)?
             .into_string()
             .expect("Failed to convert Response into String.");
@@ -128,7 +128,7 @@ impl RSBBSLoginImpl<'_> {
             // 验证码错误，默认重试。
             else if login_result.contains("抱歉，验证码填写错误") {
                 if i == LOGIN_RETRY_TIMES {
-                    return Err(Error::LoginError("验证码填写错误。".to_owned()));
+                    return Err(LoginError::CaptchaError(CaptchaError::VerifyFailed));
                 } else {
                     warn!("验证码填写错误，请重试。");
                     refresh_vcode(agent, id_hash, &referer)?;
@@ -145,7 +145,7 @@ impl RSBBSLoginImpl<'_> {
                 } else {
                     &login_result
                 };
-                return Err(Error::LoginError(format!("登录失败：{err_msg}",)));
+                return Err(LoginError::ServerError(format!("登录失败：{err_msg}",)));
             }
         }
         Ok(())
@@ -168,8 +168,8 @@ impl RSBBSSession {
         passwd: &[u8],
         ua: &str,
         login_impl: &RSBBSLoginImpl,
-        vcode_solver: &impl Fn(&DynamicImage) -> Result<String, Error>,
-    ) -> Result<Self, Error> {
+        vcode_solver: &impl Fn(&DynamicImage) -> Result<String, CaptchaError>,
+    ) -> Result<Self, LoginError> {
         let agent = crate::utils::build_agent_with_user_agent(ua);
         login_impl.login(&agent, account, passwd, vcode_solver)?;
         Ok(RSBBSSession { agent })
@@ -178,8 +178,8 @@ impl RSBBSSession {
         account: &str,
         passwd: &[u8],
         login_impl: &RSBBSLoginImpl,
-        vcode_solver: &impl Fn(&DynamicImage) -> Result<String, Error>,
-    ) -> Result<Self, Error> {
+        vcode_solver: &impl Fn(&DynamicImage) -> Result<String, CaptchaError>,
+    ) -> Result<Self, LoginError> {
         let agent = crate::utils::build_agent();
         login_impl.login(&agent, account, passwd, vcode_solver)?;
         Ok(RSBBSSession { agent })

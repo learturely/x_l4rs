@@ -15,9 +15,12 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod cry;
+
+#[cfg(feature = "cxlib_error")]
 mod find_element;
 
 pub use cry::*;
+#[cfg(feature = "cxlib_error")]
 pub(crate) use find_element::*;
 
 use ureq::{Agent, AgentBuilder};

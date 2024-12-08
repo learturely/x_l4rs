@@ -14,16 +14,19 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::utils::rsbbs::{find_login_hash, find_login_url};
-use crate::utils::{find_form_content, find_id_value_pair};
-use crate::QuestionAnswerPair;
-use cxlib_error::Error;
+use crate::{
+    utils::{
+        find_form_content, find_id_value_pair,
+        rsbbs::{find_login_hash, find_login_url},
+    },
+    QuestionAnswerPair,
+};
+use cxlib_error::LoginError;
 use cxlib_imageproc::image_from_bytes;
 use image::DynamicImage;
 use log::debug;
 use rand::Rng;
-use std::fmt::Display;
-use std::ops::{Deref, Range};
+use std::{fmt::Display, ops::Deref};
 use ureq::{Agent, AgentBuilder, Response};
 
 pub enum RSBBSProtocolItem {
@@ -49,7 +52,7 @@ impl Display for RSBBSProtocolItem {
         self.get().fmt(f)
     }
 }
-pub fn login_page(agent: &Agent) -> Result<ureq::Response, Box<ureq::Error>> {
+pub fn login_page(agent: &Agent) -> Result<Response, Box<ureq::Error>> {
     let url = format!(
         "https://{}/member.php?mod=logging&action=login&referer=http%3A%2F%2Frs.xidian.edu.cn%2Fforum.php",
         RSBBSProtocolItem::Host
@@ -60,7 +63,7 @@ pub fn update_sec_code<const IS_FIRST: bool>(
     agent: &Agent,
     id_hash: &str,
     referer: &str,
-) -> Result<ureq::Response, Error> {
+) -> Result<Response, LoginError> {
     let modid = if IS_FIRST {
         "member%3A%3Alogging"
     } else {
@@ -78,7 +81,7 @@ pub fn update_sec_code<const IS_FIRST: bool>(
         .call()
         .map_err(Box::new)?)
 }
-pub fn refresh_vcode(agent: &Agent, id_hash: &str, referer: &str) -> Result<(), Error> {
+pub fn refresh_vcode(agent: &Agent, id_hash: &str, referer: &str) -> Result<(), LoginError> {
     update_sec_code::<false>(agent, id_hash, referer)?;
     Ok(())
 }
@@ -86,14 +89,10 @@ pub fn download_vcode_image(
     agent: &Agent,
     referer: &str,
     img_url: &str,
-) -> Result<DynamicImage, Error> {
+) -> Result<DynamicImage, Box<ureq::Error>> {
     let url = format!("https://{}/{img_url}", RSBBSProtocolItem::Host);
     let mut v = Vec::new();
-    let img = agent
-        .get(&url)
-        .set("Referer", referer)
-        .call()
-        .map_err(|e| Error::from(Box::new(e)))?;
+    let img = agent.get(&url).set("Referer", referer).call()?;
     // let img_ = unsafe { ptr::read(&img) };
     // let r = img_.into_string().unwrap();
     // debug!("{}", r);
@@ -111,7 +110,7 @@ pub fn login(
     vcode: &str,
     cookies_time_days: Option<u32>,
     html: &str,
-) -> Result<Response, Error> {
+) -> Result<Response, LoginError> {
     let login_hash = find_login_hash(html)?;
     let login_url = find_login_url(login_hash.clone(), html)?;
     let login_url = login_url.replace("&amp;", "&");

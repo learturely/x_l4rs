@@ -27,7 +27,7 @@ repository = "https://github.com/learturely/x_l4rs"
 [features]
 default = ["ehall", "ids", "rsbbs"]
 cxlib_integrated = ["cxlib_login_integrated", "cxlib_protocol_integrated"]
-cxlib_login_integrated = ["cxlib_login", "ids"]
+cxlib_login_integrated = ["cxlib_user", "ids"]
 cxlib_protocol_integrated = ["cxlib_protocol", "onceinit"]
 ehall = ["ids", "getset"]
 ids = ["cxlib_error", "cxlib_utils", "rand"]
@@ -46,9 +46,9 @@ rust-crypto = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 ureq = { version = "2.10", features = ["cookies", "json"] }
 cxlib_error = { git = "https://github.com/worksoup/cxlib.git", optional = true }
-cxlib_login = { git = "https://github.com/worksoup/cxlib.git", optional = true }
+cxlib_user = { git = "https://github.com/worksoup/cxlib.git", optional = true }
 cxlib_protocol = { git = "https://github.com/worksoup/cxlib.git", optional = true }
-cxlib_utils = { git = "https://github.com/worksoup/cxlib.git", features = ["pkcs7_pad"], optional = true }
+cxlib_utils = { git = "https://github.com/worksoup/cxlib.git", optional = true }
 getset = { version = "0.1", optional = true }
-onceinit = { version = "0.0.5", optional = true }
+onceinit = { version = "0.0.7", optional = true }
 rand = { version = "0.8", optional = true }

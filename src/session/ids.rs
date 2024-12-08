@@ -20,7 +20,7 @@ use crate::{
     utils::{aes_enc, base64_dec, base64_enc, get_now_timestamp_mills, X_L4RS_ENC_IV},
     XL4rsSessionTrait, LOGIN_RETRY_TIMES,
 };
-use cxlib_error::Error;
+use cxlib_error::{CaptchaError, LoginError};
 use cxlib_imageproc::image_from_bytes;
 use cxlib_utils::pkcs7_pad;
 use image::DynamicImage;
@@ -32,8 +32,8 @@ use ureq::Agent;
 
 fn solve_captcha(
     agent: &Agent,
-    captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
-) -> Result<u32, Error> {
+    captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
+) -> Result<u32, CaptchaError> {
     #[derive(Deserialize)]
     struct Images {
         #[serde(rename = "smallImage")]
@@ -74,13 +74,13 @@ impl IDSLoginImpl {
         target:
             "http://ehall.xidian.edu.cn/login?service=http://ehall.xidian.edu.cn/new/index.html",
     };
-    #[cfg(feature = "cxlib_login")]
+    #[cfg(feature = "cxlib_user")]
     pub fn get_login_solver<CaptchaSolver>(
         self,
         captcha_solver: CaptchaSolver,
     ) -> crate::XL4rsLoginSolver<CaptchaSolver>
     where
-        CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
+        CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
     {
         crate::XL4rsLoginSolver::new(self, captcha_solver)
     }
@@ -89,15 +89,15 @@ impl IDSLoginImpl {
         agent: &Agent,
         account: &str,
         passwd: &[u8],
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
-    ) -> Result<(), Error> {
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
+    ) -> Result<(), LoginError> {
         let page = ids_protocol::login_page(agent, self.target)?
             .into_string()
             .expect("登录页获取失败。");
         for i in 0..=LOGIN_RETRY_TIMES {
             let r = ids_protocol::check_need_captcha(agent, account, get_now_timestamp_mills());
             let r = r
-                .map_err(Error::from)
+                .map_err(LoginError::from)
                 .and_then(|r| {
                     let r = r.into_string().expect("反序列化错误。");
                     debug!("{r}");
@@ -115,15 +115,13 @@ impl IDSLoginImpl {
                         if error_msg == "success" {
                             Ok(())
                         } else {
-                            Err(Error::LoginError(format!(
-                                "滑块验证失败：{error_msg}，请重新登录。"
-                            )))
+                            Err(LoginError::CaptchaError(CaptchaError::VerifyFailed))
                         }
                     } else {
                         Ok(())
                     }
                 })
-                .map_err(|e| Error::LoginError(format!("滑块验证失败：{e}，请重新登录。")));
+                .map_err(|_| LoginError::CaptchaError(CaptchaError::VerifyFailed));
             match r {
                 Ok(_) => {
                     break;
@@ -180,7 +178,7 @@ impl IDSLoginImpl {
             }
             aes_enc(
                 &n,
-                &key.ok_or_else(|| Error::LoginError("密码无法加密！".to_string()))?,
+                &key.ok_or_else(|| LoginError::CryptoError("密码无法加密！".to_string()))?,
                 &n[..16],
             )
         };
@@ -211,8 +209,8 @@ impl IDSSession {
         passwd: &[u8],
         ua: &str,
         login_impl: &IDSLoginImpl,
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
-    ) -> Result<Self, Error> {
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
+    ) -> Result<Self, LoginError> {
         let agent = crate::utils::build_agent_with_user_agent(ua);
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(IDSSession { agent })
@@ -221,8 +219,8 @@ impl IDSSession {
         account: &str,
         passwd: &[u8],
         login_impl: &IDSLoginImpl,
-        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, Error>,
-    ) -> Result<Self, Error> {
+        captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
+    ) -> Result<Self, LoginError> {
         let agent = crate::utils::build_agent();
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(IDSSession { agent })
