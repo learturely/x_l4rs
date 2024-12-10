@@ -21,7 +21,7 @@ use crate::{
     },
     QuestionAnswerPair,
 };
-use cxlib_error::LoginError;
+use cxlib_error::{AgentError, LoginError};
 use cxlib_imageproc::image_from_bytes;
 use image::DynamicImage;
 use log::debug;
@@ -52,7 +52,7 @@ impl Display for RSBBSProtocolItem {
         self.get().fmt(f)
     }
 }
-pub fn login_page(agent: &Agent) -> Result<Response, Box<ureq::Error>> {
+pub fn login_page(agent: &Agent) -> Result<Response, AgentError> {
     let url = format!(
         "https://{}/member.php?mod=logging&action=login&referer=http%3A%2F%2Frs.xidian.edu.cn%2Fforum.php",
         RSBBSProtocolItem::Host
@@ -63,7 +63,7 @@ pub fn update_sec_code<const IS_FIRST: bool>(
     agent: &Agent,
     id_hash: &str,
     referer: &str,
-) -> Result<Response, LoginError> {
+) -> Result<Response, AgentError> {
     let modid = if IS_FIRST {
         "member%3A%3Alogging"
     } else {
@@ -75,11 +75,7 @@ pub fn update_sec_code<const IS_FIRST: bool>(
         rand::thread_rng().gen_range(0.0f64..=1.0),
     );
     debug!("{url}");
-    Ok(agent
-        .get(&url)
-        .set("Referer", referer)
-        .call()
-        .map_err(Box::new)?)
+    Ok(agent.get(&url).set("Referer", referer).call()?)
 }
 pub fn refresh_vcode(agent: &Agent, id_hash: &str, referer: &str) -> Result<(), LoginError> {
     update_sec_code::<false>(agent, id_hash, referer)?;
@@ -89,7 +85,7 @@ pub fn download_vcode_image(
     agent: &Agent,
     referer: &str,
     img_url: &str,
-) -> Result<DynamicImage, Box<ureq::Error>> {
+) -> Result<DynamicImage, AgentError> {
     let url = format!("https://{}/{img_url}", RSBBSProtocolItem::Host);
     let mut v = Vec::new();
     let img = agent.get(&url).set("Referer", referer).call()?;
@@ -144,7 +140,7 @@ pub fn login(
         .set("Origin", RSBBSProtocolItem::Host.get().as_ref())
         .set("Referer", referer)
         .send_form(&post_data)
-        .map_err(Box::new)?)
+        .map_err(AgentError::from)?)
 }
 pub fn has_logged_in(agent: &Agent) -> bool {
     // TODO: UserAgent.

@@ -15,7 +15,9 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![cfg(feature = "ids")]
+
 use crate::protocol::ids::IDSProtocolItem;
+use cxlib_error::AgentError;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use ureq::Agent;
@@ -24,7 +26,7 @@ pub fn check_need_captcha(
     agent: &Agent,
     uname: &str,
     time_stamp_mills: u128,
-) -> Result<ureq::Response, Box<ureq::Error>> {
+) -> Result<ureq::Response, AgentError> {
     Ok(agent
         .get(&format!(
             "{}?username={}&_={}",
@@ -38,7 +40,7 @@ pub fn check_need_captcha(
 pub fn open_slider_captcha(
     agent: &Agent,
     time_stamp_mills: u128,
-) -> Result<ureq::Response, Box<ureq::Error>> {
+) -> Result<ureq::Response, AgentError> {
     Ok(agent
         .get(&format!(
             "{}?_={time_stamp_mills}",
@@ -49,7 +51,7 @@ pub fn open_slider_captcha(
 pub fn verify_slider_captcha(
     agent: &Agent,
     move_length: u32,
-) -> Result<ureq::Response, Box<ureq::Error>> {
+) -> Result<ureq::Response, AgentError> {
     Ok(agent
         .post(IDSProtocolItem::VerifySliderCaptcha.get().as_ref())
         .set("Refer", "https://ids.xidian.edu.cn/authserver/login")

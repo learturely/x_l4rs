@@ -15,7 +15,7 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{IDSLoginImpl, XL4rsSessionTrait};
-use cxlib_error::{CaptchaError, Error};
+use cxlib_error::{CaptchaError, LoginError};
 use getset::Getters;
 use image::DynamicImage;
 use serde::Deserialize;
@@ -86,7 +86,7 @@ impl EhallSession {
         ua: &str,
         login_impl: &EhallLoginImpl,
         captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, LoginError> {
         let agent = crate::utils::build_agent_with_user_agent(ua);
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(EhallSession { agent })
@@ -96,7 +96,7 @@ impl EhallSession {
         passwd: &[u8],
         login_impl: &EhallLoginImpl,
         captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, LoginError> {
         let agent = crate::utils::build_agent();
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(EhallSession { agent })

@@ -16,13 +16,14 @@
 
 #![cfg(feature = "ids")]
 use crate::{protocol::ids::IDSProtocolItem, utils::percent_enc};
+use cxlib_error::AgentError;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use log::debug;
 use std::ops::Deref;
 use ureq::{Agent, AgentBuilder};
 
-pub fn login_page(agent: &Agent, target: &str) -> Result<ureq::Response, Box<ureq::Error>> {
+pub fn login_page(agent: &Agent, target: &str) -> Result<ureq::Response, AgentError> {
     let target = percent_enc(target);
     Ok(agent
         .get(&format!("{}?service={target}", IDSProtocolItem::Login))
@@ -46,7 +47,7 @@ pub fn login(
     agent: &Agent,
     target: &str,
     data: &[(&str, &str)],
-) -> Result<ureq::Response, Box<ureq::Error>> {
+) -> Result<ureq::Response, AgentError> {
     let target = percent_enc(target);
     Ok(agent
         .post(&format!("{}?service={}", IDSProtocolItem::Login, target))
