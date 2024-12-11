@@ -20,7 +20,7 @@ use crate::{
     utils::md5_enc,
     XL4rsSessionTrait, LOGIN_RETRY_TIMES,
 };
-use cxlib_error::{CaptchaError, LoginError};
+use cxlib_error::{CaptchaError, LoginError, MaybeFatalError};
 use image::DynamicImage;
 use log::{debug, warn};
 use std::ops::Deref;
@@ -108,7 +108,17 @@ impl RSBBSLoginImpl<'_> {
         let pwd = hex::encode(md5_enc(passwd));
         for i in 0..=LOGIN_RETRY_TIMES {
             let img = download_vcode_image(agent, &referer, img_url)?;
-            let vcode = vcode_solver(&img)?;
+            let vcode = vcode_solver(&img);
+            let vcode = match vcode {
+                Ok(vcode) => vcode,
+                Err(e) => {
+                    if e.is_fatal() {
+                        return Err(e)?;
+                    } else {
+                        continue;
+                    }
+                }
+            };
             let login_result = crate::protocol::rsbbs::login(
                 agent,
                 &referer,

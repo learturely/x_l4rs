@@ -14,15 +14,16 @@
 //     You should have received a copy of the GNU Affero General Public License
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::utils::{find_form_content, find_id_value_pair};
 use crate::{
     protocol::ids as ids_protocol,
-    utils::{aes_enc, base64_dec, base64_enc, get_now_timestamp_mills, X_L4RS_ENC_IV},
+    utils::{
+        aes_enc, base64_dec, base64_enc, find_form_content, find_id_value_pair,
+        get_now_timestamp_mills, pkcs7_pad, X_L4RS_ENC_IV,
+    },
     XL4rsSessionTrait, LOGIN_RETRY_TIMES,
 };
-use cxlib_error::{CaptchaError, LoginError};
+use cxlib_error::{CaptchaError, LoginError, MaybeFatalError};
 use cxlib_imageproc::image_from_bytes;
-use cxlib_utils::pkcs7_pad;
 use image::DynamicImage;
 use log::{debug, warn};
 use rand::Rng;
@@ -127,7 +128,7 @@ impl IDSLoginImpl {
                     break;
                 }
                 Err(e) => {
-                    if i == LOGIN_RETRY_TIMES {
+                    if i == LOGIN_RETRY_TIMES || e.is_fatal() {
                         return Err(e);
                     } else {
                         warn!("{e}");

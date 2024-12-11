@@ -16,11 +16,9 @@
 
 mod cry;
 
-#[cfg(feature = "cxlib_error")]
 mod find_element;
 
 pub use cry::*;
-#[cfg(feature = "cxlib_error")]
 pub(crate) use find_element::*;
 
 use ureq::{Agent, AgentBuilder};

@@ -20,6 +20,25 @@ use crypto::{aes, blockmodes, buffer};
 use percent_encoding::PercentEncode;
 
 pub const X_L4RS_ENC_IV: &[u8; 16] = b"xidianscriptsxdu";
+
+pub fn pkcs7_pad<const BLOCK_SIZE: usize>(data: &[u8]) -> Vec<[u8; BLOCK_SIZE]> {
+    let len = data.len();
+    let batch = len / BLOCK_SIZE;
+    let m = len % BLOCK_SIZE;
+    let len2 = BLOCK_SIZE - m;
+    let mut r = vec![[0u8; BLOCK_SIZE]; batch + 1];
+    let pad_num = ((BLOCK_SIZE - m) % 0xFF) as u8;
+    let r_data = r.as_mut_ptr() as *mut u8;
+    unsafe {
+        std::ptr::copy_nonoverlapping(data.as_ptr(), r_data, len);
+        std::ptr::copy_nonoverlapping(
+            vec![pad_num; len2].as_ptr(),
+            r_data.add(batch * BLOCK_SIZE + m),
+            len2,
+        );
+    }
+    r
+}
 pub fn aes_enc(padded_data: &[u8], key: &[u8; 16], iv: &[u8]) -> Vec<u8> {
     let mut encryptor =
         aes::cbc_encryptor(aes::KeySize::KeySize128, key, iv, blockmodes::NoPadding);
@@ -100,8 +119,7 @@ pub fn flatten_bytes<const BLOCK_SIZE: usize>(mut blocks: Vec<[u8; BLOCK_SIZE]>)
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, flatten_bytes};
-    use cxlib_utils::pkcs7_pad;
+    use crate::utils::{aes_dec, aes_enc, base64_dec, base64_enc, flatten_bytes, pkcs7_pad};
     use log::info;
 
     #[test]

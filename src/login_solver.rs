@@ -16,13 +16,12 @@
 
 const X_L4RS_ENC_KEY: &[u8; 16] = b"x_l4rsforxdsign.";
 use crate::{
-    utils::{aes_dec, aes_enc, base64_dec, base64_enc, X_L4RS_ENC_IV},
+    utils::{aes_dec, aes_enc, base64_dec, base64_enc, pkcs7_pad, X_L4RS_ENC_IV},
     IDSLoginImpl,
 };
 use cxlib_error::{CaptchaError, LoginError};
 #[cfg(feature = "cxlib_protocol")]
 use cxlib_protocol::{ProtocolItem, ProtocolItemTrait};
-use cxlib_utils::pkcs7_pad;
 use image::DynamicImage;
 use ureq::Agent;
 
