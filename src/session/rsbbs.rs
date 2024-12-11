@@ -28,16 +28,40 @@ use ureq::Agent;
 
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(u8)]
+#[non_exhaustive]
 pub enum Question {
     #[default]
-    未设置 = 0,
-    母亲的名字 = 1,
-    爷爷的名字 = 2,
-    父亲出生的城市 = 3,
-    您其中一位老师的名字 = 4,
-    您个人计算机的型号 = 5,
-    您最喜欢的餐馆名称 = 6,
-    驾驶执照最后四位数字 = 7,
+    /// 未设置
+    Q0 = 0,
+    /// 母亲的名字
+    Q1 = 1,
+    /// 爷爷的名字,
+    Q2 = 2,
+    /// 父亲出生的城市,
+    Q3 = 3,
+    /// 您其中一位老师的名字
+    Q4 = 4,
+    /// 您个人计算机的型号
+    Q5 = 5,
+    /// 您最喜欢的餐馆名称
+    Q6 = 6,
+    /// 驾驶执照最后四位数字
+    Q7 = 7,
+}
+impl Question {
+    pub const DEFAULT: Question = Question::Q0;
+    pub fn description(&self) -> &'static str {
+        match self {
+            Question::Q0 => "未设置",
+            Question::Q1 => "母亲的名字",
+            Question::Q2 => "爷爷的名字",
+            Question::Q3 => "父亲出生的城市",
+            Question::Q4 => "您其中一位老师的名字",
+            Question::Q5 => "您个人计算机的型号",
+            Question::Q6 => "您最喜欢的餐馆名称",
+            Question::Q7 => "驾驶执照最后四位数字",
+        }
+    }
 }
 impl Question {
     pub fn get_id(&self) -> u8 {
@@ -64,7 +88,7 @@ pub struct QuestionAnswerPair<'a> {
 }
 impl QuestionAnswerPair<'_> {
     pub const DEFAULT: Self = Self {
-        question: Question::未设置,
+        question: Question::DEFAULT,
         answer: "",
     };
 }
