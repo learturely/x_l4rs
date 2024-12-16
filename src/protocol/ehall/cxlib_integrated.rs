@@ -16,7 +16,7 @@
 
 use crate::protocol::ehall::EhallProtocolItem;
 use cxlib_protocol::{ProtocolDataTrait, ProtocolItemTrait, ProtocolTrait};
-use onceinit::OnceInit;
+use onceinit::{OnceInit, UninitGlobal};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -25,16 +25,21 @@ pub struct EhallProtocolData {
     app_show: Option<String>,
     service_search_custom: Option<String>,
 }
-
+impl
+    UninitGlobal<
+        dyn ProtocolTrait<EhallProtocolItem>,
+        OnceInit<dyn ProtocolTrait<EhallProtocolItem>>,
+    > for EhallProtocolItem
+{
+    fn holder() -> &'static OnceInit<dyn ProtocolTrait<EhallProtocolItem>> {
+        &EHALL_PROTOCOL
+    }
+}
 impl ProtocolItemTrait for EhallProtocolItem {
     type ProtocolData = EhallProtocolData;
 
     fn config_file_name() -> &'static str {
         "x_l4rs-ehall-protocol.toml"
-    }
-
-    fn get_protocol_() -> &'static OnceInit<(dyn ProtocolTrait<EhallProtocolItem> + 'static)> {
-        &EHALL_PROTOCOL
     }
 
     fn get_protocol() -> &'static dyn ProtocolTrait<Self> {
@@ -87,4 +92,4 @@ impl ProtocolDataTrait for EhallProtocolData {
     }
 }
 
-static EHALL_PROTOCOL: OnceInit<dyn ProtocolTrait<EhallProtocolItem>> = OnceInit::new();
+static EHALL_PROTOCOL: OnceInit<dyn ProtocolTrait<EhallProtocolItem>> = OnceInit::uninit();

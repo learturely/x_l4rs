@@ -16,7 +16,7 @@
 
 use crate::protocol::ids::IDSProtocolItem;
 use cxlib_protocol::{ProtocolDataTrait, ProtocolItemTrait, ProtocolTrait};
-use onceinit::OnceInit;
+use onceinit::{OnceInit, UninitGlobal};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -28,16 +28,18 @@ pub struct IDSProtocolData {
     authserver: Option<String>,
     get_user_conf: Option<String>,
 }
-
+impl UninitGlobal<dyn ProtocolTrait<IDSProtocolItem>, OnceInit<dyn ProtocolTrait<IDSProtocolItem>>>
+    for IDSProtocolItem
+{
+    fn holder() -> &'static OnceInit<dyn ProtocolTrait<IDSProtocolItem>> {
+        &IDS_PROTOCOL
+    }
+}
 impl ProtocolItemTrait for IDSProtocolItem {
     type ProtocolData = IDSProtocolData;
 
     fn config_file_name() -> &'static str {
         "x_l4rs-ids-protocol.toml"
-    }
-
-    fn get_protocol_() -> &'static OnceInit<(dyn ProtocolTrait<IDSProtocolItem> + 'static)> {
-        &IDS_PROTOCOL
     }
 
     fn get_protocol() -> &'static dyn ProtocolTrait<Self> {
@@ -104,4 +106,4 @@ impl ProtocolDataTrait for IDSProtocolData {
     }
 }
 
-static IDS_PROTOCOL: OnceInit<dyn ProtocolTrait<IDSProtocolItem>> = OnceInit::new();
+static IDS_PROTOCOL: OnceInit<dyn ProtocolTrait<IDSProtocolItem>> = OnceInit::uninit();
