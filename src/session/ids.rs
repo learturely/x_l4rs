@@ -26,7 +26,6 @@ use cxlib_error::{CaptchaError, LoginError, MaybeFatalError};
 use cxlib_imageproc::image_from_bytes;
 use image::DynamicImage;
 use log::{debug, warn};
-use rand::Rng;
 use serde::Deserialize;
 use std::ops::Deref;
 use ureq::Agent;
@@ -170,7 +169,7 @@ impl IDSLoginImpl {
             fn __gen_bytes<const SIZE: usize>() -> [u8; SIZE] {
                 let mut bytes = [0; SIZE];
                 for b in bytes.iter_mut() {
-                    let a = rand::thread_rng().gen_range(0..AES_CHARS_LEN);
+                    let a = rand::random_range(0..AES_CHARS_LEN);
                     *b = AES_CHARS[a];
                 }
                 static AES_CHARS: &[u8; 48] = b"ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";

@@ -49,5 +49,5 @@ cxlib_error = { git = "https://github.com/worksoup/cxlib.git" }
 cxlib_user = { git = "https://github.com/worksoup/cxlib.git", optional = true }
 cxlib_protocol = { git = "https://github.com/worksoup/cxlib.git", optional = true }
 getset = { version = "0.1", optional = true }
-onceinit = { version = "0.0.10", optional = true }
-rand = { version = "0.8", optional = true }
+onceinit = { version = "0.0.11", optional = true }
+rand = { version = "0.9", optional = true }

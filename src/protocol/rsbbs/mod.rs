@@ -25,7 +25,6 @@ use cxlib_error::{AgentError, LoginError};
 use cxlib_imageproc::image_from_bytes;
 use image::DynamicImage;
 use log::debug;
-use rand::Rng;
 use std::{fmt::Display, ops::Deref};
 use ureq::{Agent, AgentBuilder, Response};
 
@@ -72,7 +71,7 @@ pub fn update_sec_code<const IS_FIRST: bool>(
     let url = format!(
         "https://{0}/misc.php?mod=seccode&action=update&idhash={id_hash}&{1}&modid={modid}",
         RSBBSProtocolItem::Host,
-        rand::thread_rng().gen_range(0.0f64..=1.0),
+        rand::random_range(0.0f64..=1.0),
     );
     debug!("{url}");
     Ok(agent.get(&url).set("Referer", referer).call()?)
