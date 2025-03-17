@@ -43,7 +43,7 @@ where
         }
     }
 }
-impl<CaptchaSolver> cxlib_user::LoginSolverTrait for XL4rsLoginSolver<CaptchaSolver>
+impl<CaptchaSolver> cxlib_login::LoginSolverTrait for XL4rsLoginSolver<CaptchaSolver>
 where
     CaptchaSolver:
         Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError> + Send + Sync + 'static,

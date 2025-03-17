@@ -15,19 +15,19 @@
 //     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::protocol::ehall::EhallProtocolItem;
-use ureq::Agent;
+use ureq::{http::Response, Agent, Body};
 
-pub fn use_app(agent: &Agent, app_id: &str) -> Result<ureq::Response, Box<ureq::Error>> {
+pub fn use_app(agent: &Agent, app_id: &str) -> Result<Response<Body>, Box<ureq::Error>> {
     Ok(agent
         .get(&format!("{}?appId={app_id}", EhallProtocolItem::AppShow))
-        .set(
+        .header(
             "Accept",
             "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
         )
         .call()?)
 }
 
-pub fn get_app_list(agent: &Agent, search_key: &str) -> Result<ureq::Response, Box<ureq::Error>> {
+pub fn get_app_list(agent: &Agent, search_key: &str) -> Result<Response<Body>, Box<ureq::Error>> {
     Ok(agent
         .get(&format!(
             "{}?{}&{}&{}&{}&{}",

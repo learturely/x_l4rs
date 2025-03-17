@@ -25,8 +25,8 @@ use cxlib_error::{AgentError, LoginError};
 use cxlib_imageproc::image_from_bytes;
 use image::DynamicImage;
 use log::debug;
-use std::{fmt::Display, ops::Deref};
-use ureq::{Agent, AgentBuilder, Response};
+use std::{fmt::Display, io::Read};
+use ureq::{http::Response, Agent, Body};
 
 pub enum RSBBSProtocolItem {
     Host,
@@ -51,7 +51,7 @@ impl Display for RSBBSProtocolItem {
         self.get().fmt(f)
     }
 }
-pub fn login_page(agent: &Agent) -> Result<Response, AgentError> {
+pub fn login_page(agent: &Agent) -> Result<Response<Body>, AgentError> {
     let url = format!(
         "https://{}/member.php?mod=logging&action=login&referer=http%3A%2F%2Frs.xidian.edu.cn%2Fforum.php",
         RSBBSProtocolItem::Host
@@ -62,7 +62,7 @@ pub fn update_sec_code<const IS_FIRST: bool>(
     agent: &Agent,
     id_hash: &str,
     referer: &str,
-) -> Result<Response, AgentError> {
+) -> Result<Response<Body>, AgentError> {
     let modid = if IS_FIRST {
         "member%3A%3Alogging"
     } else {
@@ -74,7 +74,7 @@ pub fn update_sec_code<const IS_FIRST: bool>(
         rand::random_range(0.0f64..=1.0),
     );
     debug!("{url}");
-    Ok(agent.get(&url).set("Referer", referer).call()?)
+    Ok(agent.get(&url).header("Referer", referer).call()?)
 }
 pub fn refresh_vcode(agent: &Agent, id_hash: &str, referer: &str) -> Result<(), LoginError> {
     update_sec_code::<false>(agent, id_hash, referer)?;
@@ -87,11 +87,12 @@ pub fn download_vcode_image(
 ) -> Result<DynamicImage, AgentError> {
     let url = format!("https://{}/{img_url}", RSBBSProtocolItem::Host);
     let mut v = Vec::new();
-    let img = agent.get(&url).set("Referer", referer).call()?;
+    let img = agent.get(&url).header("Referer", referer).call()?;
     // let img_ = unsafe { ptr::read(&img) };
     // let r = img_.into_string().unwrap();
     // debug!("{}", r);
-    img.into_reader()
+    img.into_body()
+        .into_reader()
         .read_to_end(&mut v)
         .expect("failed to read vcode image.");
     let img = image_from_bytes(v);
@@ -105,7 +106,7 @@ pub fn login(
     vcode: &str,
     cookies_time_days: Option<u32>,
     html: &str,
-) -> Result<Response, LoginError> {
+) -> Result<Response<Body>, LoginError> {
     let login_hash = find_login_hash(html)?;
     let login_url = find_login_url(login_hash.clone(), html)?;
     let login_url = login_url.replace("&amp;", "&");
@@ -136,22 +137,22 @@ pub fn login(
     post_data.push(("cookietime", &cookies_time));
     Ok(agent
         .post(&url)
-        .set("Origin", RSBBSProtocolItem::Host.get().as_ref())
-        .set("Referer", referer)
-        .send_form(&post_data)
+        .header("Origin", RSBBSProtocolItem::Host.get())
+        .header("Referer", referer)
+        .send_form(post_data)
         .map_err(AgentError::from)?)
 }
 pub fn has_logged_in(agent: &Agent) -> bool {
-    // TODO: UserAgent.
-    // TODO: use ureq 3.x.
-    let agent = AgentBuilder::new()
-        .redirects(0)
-        .cookie_store(agent.cookie_store().deref().clone())
-        .build();
     let url = format!("https://{}/forum.php", RSBBSProtocolItem::Host);
-    agent.get(&url).call().is_ok_and(|r| {
-        let code = r.status();
-        debug!("{code}");
-        code != 302
-    })
+    agent
+        .get(&url)
+        .config()
+        .max_redirects(0)
+        .build()
+        .call()
+        .is_ok_and(|r| {
+            let code = r.status();
+            debug!("{code}");
+            code != 302
+        })
 }

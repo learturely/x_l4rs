@@ -19,20 +19,21 @@ use crate::protocol::ids::IDSProtocolItem;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use serde::Serialize;
-use ureq::Agent;
+use ureq::{http::Response, Agent, Body};
+
 /// ``` json
 /// {
 ///     cn: "我是谁"
 ///     en: "WhoAmI"
 /// }
 /// ```
-pub fn get_user_conf(agent: &Agent) -> Result<ureq::Response, Box<ureq::Error>> {
+pub fn get_user_conf(agent: &Agent) -> Result<Response<Body>, Box<ureq::Error>> {
     #[derive(Serialize)]
     struct Data {
         n: f64,
     }
     Ok(agent
-        .post(IDSProtocolItem::GetUserConf.get().as_ref())
+        .post(IDSProtocolItem::GetUserConf.get())
         .send_json(Data {
             n: 0.12724911253015814, // 似乎没用。
         })?)
@@ -44,7 +45,7 @@ mod tests {
     use log::info;
     #[test]
     fn test_get_user_conf() {
-        let r = get_user_conf(&Agent::new()).unwrap();
-        info!("{}", r.into_string().unwrap());
+        let r = get_user_conf(&Agent::new_with_defaults()).unwrap();
+        info!("{}", r.into_body().read_to_string().unwrap());
     }
 }

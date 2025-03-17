@@ -24,7 +24,7 @@ use cxlib_error::{CaptchaError, LoginError, MaybeFatalError};
 use image::DynamicImage;
 use log::{debug, warn};
 use std::ops::Deref;
-use ureq::Agent;
+use ureq::{Agent, ResponseExt};
 
 #[derive(Debug, Copy, Clone, Default)]
 #[repr(u8)]
@@ -118,14 +118,16 @@ impl RSBBSLoginImpl<'_> {
         vcode_solver: &impl Fn(&DynamicImage) -> Result<String, CaptchaError>,
     ) -> Result<(), LoginError> {
         let login_page = login_page(agent)?;
-        let referer = login_page.get_url().to_string();
+        let referer = login_page.get_uri().to_string();
         let html = login_page
-            .into_string()
+            .into_body()
+            .read_to_string()
             .expect("Failed to convert Response into String.");
         let id_hash = find_id_hash(&html)
             .ok_or_else(|| LoginError::ServerError("未找到 `id_hash`, 跳过下载。".to_owned()))?;
         let r = update_sec_code::<true>(agent, id_hash, &referer)?
-            .into_string()
+            .into_body()
+            .read_to_string()
             .expect("Failed to convert Response into String.");
         debug!("{r}");
         let img_url = find_vcode_img_url(id_hash, &r)?;
@@ -152,7 +154,8 @@ impl RSBBSLoginImpl<'_> {
                 self.cookies_time_days,
                 &html,
             )?
-            .into_string()
+            .into_body()
+            .read_to_string()
             .expect("Failed to convert response into string.");
             debug!("{login_result}");
             // 登录成功。

@@ -20,13 +20,13 @@ use crate::protocol::ids::IDSProtocolItem;
 use cxlib_error::AgentError;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
-use ureq::Agent;
+use ureq::{http::Response, Agent, Body};
 
 pub fn check_need_captcha(
     agent: &Agent,
     uname: &str,
     time_stamp_mills: u128,
-) -> Result<ureq::Response, AgentError> {
+) -> Result<Response<Body>, AgentError> {
     Ok(agent
         .get(&format!(
             "{}?username={}&_={}",
@@ -40,7 +40,7 @@ pub fn check_need_captcha(
 pub fn open_slider_captcha(
     agent: &Agent,
     time_stamp_mills: u128,
-) -> Result<ureq::Response, AgentError> {
+) -> Result<Response<Body>, AgentError> {
     Ok(agent
         .get(&format!(
             "{}?_={time_stamp_mills}",
@@ -51,11 +51,11 @@ pub fn open_slider_captcha(
 pub fn verify_slider_captcha(
     agent: &Agent,
     move_length: u32,
-) -> Result<ureq::Response, AgentError> {
+) -> Result<Response<Body>, AgentError> {
     Ok(agent
-        .post(IDSProtocolItem::VerifySliderCaptcha.get().as_ref())
-        .set("Refer", "https://ids.xidian.edu.cn/authserver/login")
-        .send_form(&[
+        .post(IDSProtocolItem::VerifySliderCaptcha.get())
+        .header("Refer", "https://ids.xidian.edu.cn/authserver/login")
+        .send_form([
             ("canvasLength", "280"),
             ("moveLength", move_length.to_string().as_str()),
         ])?)

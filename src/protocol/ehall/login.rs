@@ -22,7 +22,7 @@ use ureq::Agent;
 
 pub fn has_logged_in(agent: &Agent) -> bool {
     agent
-        .get(EhallProtocolItem::UserFavoriteApps.get().as_ref())
+        .get(EhallProtocolItem::UserFavoriteApps.get())
         .call()
         .is_ok_and(|r| {
             #[derive(Deserialize)]
@@ -30,7 +30,10 @@ pub fn has_logged_in(agent: &Agent) -> bool {
                 #[serde(rename = "hasLogin")]
                 has_login: bool,
             }
-            let Tmp { has_login } = r.into_json().expect("failed to deserialize hasLogin");
+            let Tmp { has_login } = r
+                .into_body()
+                .read_json()
+                .expect("failed to deserialize hasLogin");
             has_login
         })
 }

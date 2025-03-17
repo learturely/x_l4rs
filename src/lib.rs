@@ -24,10 +24,10 @@ mod session;
 #[cfg(any(feature = "ehall", feature = "ids", feature = "rsbbs"))]
 pub use session::*;
 
-#[cfg(all(feature = "cxlib_user", feature = "ids"))]
+#[cfg(all(feature = "cxlib_login", feature = "ids"))]
 mod login_solver;
 
-#[cfg(all(feature = "cxlib_user", feature = "ids"))]
+#[cfg(all(feature = "cxlib_login", feature = "ids"))]
 pub use login_solver::*;
 
 #[cfg(test)]

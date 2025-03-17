@@ -45,7 +45,8 @@ fn solve_captcha(
         small_image,
         big_image,
     } = ids_protocol::open_slider_captcha(agent, get_now_timestamp_mills())?
-        .into_json()
+        .into_body()
+        .read_json()
         .expect("Failed to parse captcha slider");
     let small_image = base64_dec(small_image).expect("Failed to base64 decode captcha small image");
     let big_image = base64_dec(big_image).expect("Failed to base64 decode captcha big image");
@@ -74,7 +75,7 @@ impl IDSLoginImpl {
         target:
             "http://ehall.xidian.edu.cn/login?service=http://ehall.xidian.edu.cn/new/index.html",
     };
-    #[cfg(feature = "cxlib_user")]
+    #[cfg(feature = "cxlib_login")]
     pub fn get_login_solver<CaptchaSolver>(
         self,
         captcha_solver: CaptchaSolver,
@@ -92,14 +93,15 @@ impl IDSLoginImpl {
         captcha_solver: &impl Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
     ) -> Result<(), LoginError> {
         let page = ids_protocol::login_page(agent, self.target)?
-            .into_string()
+            .into_body()
+            .read_to_string()
             .expect("登录页获取失败。");
         for i in 0..=LOGIN_RETRY_TIMES {
             let r = ids_protocol::check_need_captcha(agent, account, get_now_timestamp_mills());
             let r = r
                 .map_err(LoginError::from)
                 .and_then(|r| {
-                    let r = r.into_string().expect("反序列化错误。");
+                    let r = r.into_body().read_to_string().expect("反序列化错误。");
                     debug!("{r}");
                     if r.contains('t') {
                         #[derive(Deserialize)]
@@ -109,7 +111,8 @@ impl IDSLoginImpl {
                         }
                         let v = solve_captcha(agent, captcha_solver)?;
                         let Tmp { error_msg } = ids_protocol::verify_slider_captcha(agent, v)?
-                            .into_json()
+                            .into_body()
+                            .read_json()
                             .expect("json parse failed.");
                         debug!("{error_msg}");
                         if error_msg == "success" {
@@ -187,7 +190,7 @@ impl IDSLoginImpl {
         post_data.push(("password", &password));
         post_data.push(("remember_me", "true"));
         post_data.push(("captcha", ""));
-        let _ = ids_protocol::login(agent, self.target, &post_data)?;
+        let _ = ids_protocol::login(agent, self.target, post_data)?;
         Ok(())
     }
 }

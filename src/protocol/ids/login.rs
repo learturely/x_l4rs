@@ -20,10 +20,9 @@ use cxlib_error::AgentError;
 #[cfg(feature = "cxlib_protocol_integrated")]
 use cxlib_protocol::ProtocolItemTrait;
 use log::debug;
-use std::ops::Deref;
-use ureq::{Agent, AgentBuilder};
+use ureq::{http::Response, Agent, Body};
 
-pub fn login_page(agent: &Agent, target: &str) -> Result<ureq::Response, AgentError> {
+pub fn login_page(agent: &Agent, target: &str) -> Result<Response<Body>, AgentError> {
     let target = percent_enc(target);
     Ok(agent
         .get(&format!("{}?service={target}", IDSProtocolItem::Login))
@@ -46,22 +45,19 @@ pub fn login_page(agent: &Agent, target: &str) -> Result<ureq::Response, AgentEr
 pub fn login(
     agent: &Agent,
     target: &str,
-    data: &[(&str, &str)],
-) -> Result<ureq::Response, AgentError> {
+    data: Vec<(&str, &str)>,
+) -> Result<Response<Body>, AgentError> {
     let target = percent_enc(target);
     Ok(agent
         .post(&format!("{}?service={}", IDSProtocolItem::Login, target))
         .send_form(data)?)
 }
 pub fn has_logged_in(agent: &Agent) -> bool {
-    // TODO: UserAgent.
-    // TODO: use ureq 3.x.
-    let agent = AgentBuilder::new()
-        .redirects(0)
-        .cookie_store(agent.cookie_store().deref().clone())
-        .build();
     agent
-        .get(IDSProtocolItem::Authserver.get().as_ref())
+        .get(IDSProtocolItem::Authserver.get())
+        .config()
+        .max_redirects(0)
+        .build()
         .call()
         .is_ok_and(|r| {
             let code = r.status();
@@ -74,11 +70,11 @@ pub fn has_logged_in(agent: &Agent) -> bool {
 mod tests {
     use crate::protocol::ids::has_logged_in;
     use log::info;
-    use ureq::AgentBuilder;
+    use ureq::Agent;
 
     #[test]
     fn test_authserver() {
-        let agent = AgentBuilder::new().redirects(0).build();
+        let agent = Agent::new_with_config(Agent::config_builder().max_redirects(0).build());
         let r = has_logged_in(&agent);
         info!("{r}");
     }

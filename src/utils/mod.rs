@@ -21,7 +21,7 @@ mod find_element;
 pub use cry::*;
 pub(crate) use find_element::*;
 
-use ureq::{Agent, AgentBuilder};
+use ureq::Agent;
 
 pub fn get_now_timestamp_mills() -> u128 {
     std::time::SystemTime::now()
@@ -31,19 +31,15 @@ pub fn get_now_timestamp_mills() -> u128 {
 }
 
 pub fn build_agent() -> Agent {
-    let cookie_store = cookie_store::CookieStore::new(None);
-    AgentBuilder::new()
-        .redirects(15)
-        .cookie_store(cookie_store)
-        .build()
+    let config = Agent::config_builder().max_redirects(15).build();
+    Agent::new_with_config(config)
 }
 pub fn build_agent_with_user_agent(ua: &str) -> Agent {
-    let cookie_store = cookie_store::CookieStore::new(None);
-    AgentBuilder::new()
-        .redirects(15)
+    let config = Agent::config_builder()
+        .max_redirects(15)
         .user_agent(ua)
-        .cookie_store(cookie_store)
-        .build()
+        .build();
+    Agent::new_with_config(config)
 }
 
 pub fn time_it<R, F: FnOnce() -> R>(f: F) -> (R, u128) {

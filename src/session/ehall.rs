@@ -20,7 +20,7 @@ use getset::Getters;
 use image::DynamicImage;
 use serde::Deserialize;
 use std::ops::Deref;
-use ureq::{serde_json, Agent};
+use ureq::{http::Response, Agent, Body};
 
 pub struct EhallLoginImpl {
     inner: IDSLoginImpl,
@@ -101,7 +101,7 @@ impl EhallSession {
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(EhallSession { agent })
     }
-    pub fn use_app(&self, app_id: &str) -> Result<ureq::Response, Box<ureq::Error>> {
+    pub fn use_app(&self, app_id: &str) -> Result<Response<Body>, Box<ureq::Error>> {
         crate::protocol::ehall::use_app(self, app_id)
     }
     pub fn get_app_list(
@@ -118,7 +118,7 @@ impl EhallSession {
         #[cfg(debug_assertions)]
         let TmpData { has_login, data } =
             crate::utils::print_timed_result(crate::utils::time_it(|| {
-                r.into_json().expect("failed to parse json.")
+                r.into_body().read_json().expect("failed to parse json.")
             }));
         #[cfg(not(debug_assertions))]
         let TmpData { has_login, data } = r.into_json().expect("failed to parse json.");
