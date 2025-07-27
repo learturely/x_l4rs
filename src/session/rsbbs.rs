@@ -1,26 +1,32 @@
-//     [xdlinux/libxduauth] for Rust.
-//     Copyright (C) 2024  learturely <learturely@gmail.com>
+// MIT License
 //
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU Affero General Public License as published
-//     by the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Copyright (c) 2025 2025  learturely <learturely@gmail.com>
 //
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU Affero General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     You should have received a copy of the GNU Affero General Public License
-//     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
+use crate::error::{CaptchaError, LoginError};
 use crate::utils::rsbbs::{find_id_hash, find_vcode_img_url};
 use crate::{
+    LOGIN_RETRY_TIMES, XL4rsSessionTrait,
     protocol::rsbbs::{download_vcode_image, login_page, refresh_vcode, update_sec_code},
     utils::md5_enc,
-    XL4rsSessionTrait, LOGIN_RETRY_TIMES,
 };
-use cxlib_error::{CaptchaError, LoginError, MaybeFatalError};
 use image::DynamicImage;
 use log::{debug, warn};
 use std::ops::Deref;
@@ -50,6 +56,7 @@ pub enum Question {
 }
 impl Question {
     pub const DEFAULT: Question = Question::Q0;
+    #[inline]
     pub fn description(&self) -> &'static str {
         match self {
             Question::Q0 => "未设置",
@@ -64,19 +71,23 @@ impl Question {
     }
 }
 impl Question {
+    #[inline]
     pub fn get_id(&self) -> u8 {
         unsafe { *(&self as *const _ as *const u8) }
     }
+    #[inline]
     pub fn from_id(id: u8) -> Self {
         unsafe { std::mem::transmute(id) }
     }
 }
 impl From<u8> for Question {
+    #[inline]
     fn from(value: u8) -> Self {
         Self::from_id(value)
     }
 }
 impl From<Question> for u8 {
+    #[inline]
     fn from(value: Question) -> Self {
         value.get_id()
     }
@@ -98,6 +109,7 @@ pub struct RSBBSLoginImpl<'a> {
     cookies_time_days: Option<u32>,
 }
 impl RSBBSLoginImpl<'_> {
+    #[inline]
     pub fn new(
         question_answer_pairs: QuestionAnswerPair,
         cookies_time_days: Option<u32>,
@@ -195,11 +207,13 @@ pub struct RSBBSSession {
 impl Deref for RSBBSSession {
     type Target = Agent;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.agent
     }
 }
 impl RSBBSSession {
+    #[inline]
     pub fn login_with_user_agent(
         account: &str,
         passwd: &[u8],
@@ -211,6 +225,7 @@ impl RSBBSSession {
         login_impl.login(&agent, account, passwd, vcode_solver)?;
         Ok(RSBBSSession { agent })
     }
+    #[inline]
     pub fn login(
         account: &str,
         passwd: &[u8],
@@ -223,6 +238,7 @@ impl RSBBSSession {
     }
 }
 impl XL4rsSessionTrait for RSBBSSession {
+    #[inline]
     fn has_logged_in(&self) -> bool {
         crate::protocol::rsbbs::has_logged_in(&self.agent)
     }

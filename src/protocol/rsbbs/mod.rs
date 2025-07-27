@@ -1,37 +1,43 @@
-//     [xdlinux/libxduauth] for Rust.
-//     Copyright (C) 2024  learturely <learturely@gmail.com>
+// MIT License
 //
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU Affero General Public License as published
-//     by the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Copyright (c) 2025 2025  learturely <learturely@gmail.com>
 //
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU Affero General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     You should have received a copy of the GNU Affero General Public License
-//     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 use crate::{
+    QuestionAnswerPair,
+    error::{AgentError, LoginError},
     utils::{
-        find_form_content, find_id_value_pair,
+        find_form_content, find_id_value_pair, image_from_bytes,
         rsbbs::{find_login_hash, find_login_url},
     },
-    QuestionAnswerPair,
 };
-use cxlib_error::{AgentError, LoginError};
-use cxlib_imageproc::image_from_bytes;
 use image::DynamicImage;
 use log::debug;
 use std::{fmt::Display, io::Read};
-use ureq::{http::Response, Agent, Body};
+use ureq::{Agent, Body, http::Response};
 
 pub enum RSBBSProtocolItem {
     Host,
 }
 impl RSBBSProtocolItem {
+    #[inline]
     fn get_default(&self) -> &'static str {
         match self {
             RSBBSProtocolItem::Host => Self::HOST,
@@ -39,6 +45,7 @@ impl RSBBSProtocolItem {
     }
 }
 impl RSBBSProtocolItem {
+    #[inline]
     pub fn get(&self) -> &'static str {
         self.get_default()
     }
@@ -47,10 +54,12 @@ impl RSBBSProtocolItem {
     pub const HOST: &'static str = "rs.xidian.edu.cn";
 }
 impl Display for RSBBSProtocolItem {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         self.get().fmt(f)
     }
 }
+#[inline]
 pub fn login_page(agent: &Agent) -> Result<Response<Body>, AgentError> {
     let url = format!(
         "https://{}/member.php?mod=logging&action=login&referer=http%3A%2F%2Frs.xidian.edu.cn%2Fforum.php",
@@ -58,6 +67,7 @@ pub fn login_page(agent: &Agent) -> Result<Response<Body>, AgentError> {
     );
     Ok(agent.get(&url).call()?)
 }
+#[inline]
 pub fn update_sec_code<const IS_FIRST: bool>(
     agent: &Agent,
     id_hash: &str,
@@ -76,10 +86,12 @@ pub fn update_sec_code<const IS_FIRST: bool>(
     debug!("{url}");
     Ok(agent.get(&url).header("Referer", referer).call()?)
 }
+#[inline]
 pub fn refresh_vcode(agent: &Agent, id_hash: &str, referer: &str) -> Result<(), LoginError> {
     update_sec_code::<false>(agent, id_hash, referer)?;
     Ok(())
 }
+#[inline]
 pub fn download_vcode_image(
     agent: &Agent,
     referer: &str,
@@ -142,6 +154,7 @@ pub fn login(
         .send_form(post_data)
         .map_err(AgentError::from)?)
 }
+#[inline]
 pub fn has_logged_in(agent: &Agent) -> bool {
     let url = format!("https://{}/forum.php", RSBBSProtocolItem::Host);
     agent

@@ -1,31 +1,30 @@
-//     [xdlinux/libxduauth] for Rust.
-//     Copyright (C) 2024  learturely <learturely@gmail.com>
+// MIT License
 //
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU Affero General Public License as published
-//     by the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Copyright (c) 2025 2025  learturely <learturely@gmail.com>
 //
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU Affero General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     You should have received a copy of the GNU Affero General Public License
-//     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 mod app;
 mod login;
 
 pub use app::*;
 pub use login::*;
-
-#[cfg(feature = "cxlib_protocol_integrated")]
-mod cxlib_integrated;
-#[cfg(feature = "cxlib_protocol_integrated")]
-pub use cxlib_integrated::*;
-#[cfg(feature = "cxlib_protocol_integrated")]
-use cxlib_protocol::ProtocolItemTrait;
 
 use std::fmt::Display;
 
@@ -35,6 +34,7 @@ pub enum EhallProtocolItem {
     ServiceSearchCustom,
 }
 impl EhallProtocolItem {
+    #[inline]
     fn get_default(&self) -> &'static str {
         match self {
             EhallProtocolItem::UserFavoriteApps => Self::USER_FAVORITE_APPS,
@@ -43,8 +43,9 @@ impl EhallProtocolItem {
         }
     }
 }
-#[cfg(not(feature = "cxlib_protocol_integrated"))]
+
 impl EhallProtocolItem {
+    #[inline]
     pub fn get(&self) -> &'static str {
         self.get_default()
     }
@@ -57,6 +58,7 @@ impl EhallProtocolItem {
         "http://ehall.xidian.edu.cn/jsonp/serviceSearchCustom.json";
 }
 impl Display for EhallProtocolItem {
+    #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         self.get().fmt(f)
     }

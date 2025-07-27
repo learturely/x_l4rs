@@ -1,29 +1,34 @@
-//     [xdlinux/libxduauth] for Rust.
-//     Copyright (C) 2024  learturely <learturely@gmail.com>
+// MIT License
 //
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU Affero General Public License as published
-//     by the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Copyright (c) 2025 2025  learturely <learturely@gmail.com>
 //
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU Affero General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     You should have received a copy of the GNU Affero General Public License
-//     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 use crate::{
+    LOGIN_RETRY_TIMES, XL4rsSessionTrait,
+    error::{CaptchaError, LoginError},
     protocol::ids as ids_protocol,
     utils::{
-        aes_enc, base64_dec, base64_enc, find_form_content, find_id_value_pair,
-        get_now_timestamp_mills, pkcs7_pad, X_L4RS_ENC_IV,
+        X_L4RS_ENC_IV, aes_enc, base64_dec, base64_enc, find_form_content, find_id_value_pair,
+        get_now_timestamp_mills, image_from_bytes, pkcs7_pad,
     },
-    XL4rsSessionTrait, LOGIN_RETRY_TIMES,
 };
-use cxlib_error::{CaptchaError, LoginError, MaybeFatalError};
-use cxlib_imageproc::image_from_bytes;
 use image::DynamicImage;
 use log::{debug, warn};
 use serde::Deserialize;
@@ -62,9 +67,11 @@ pub struct IDSLoginImpl {
     target: &'static str,
 }
 impl IDSLoginImpl {
+    #[inline]
     pub fn new(target: &'static str) -> IDSLoginImpl {
         IDSLoginImpl { target }
     }
+    #[inline]
     pub fn target(&self) -> &'static str {
         self.target
     }
@@ -72,19 +79,8 @@ impl IDSLoginImpl {
         target: "https://learning.xidian.edu.cn/cassso/xidian",
     };
     pub const TARGET_EHALL: Self = Self {
-        target:
-            "http://ehall.xidian.edu.cn/login?service=http://ehall.xidian.edu.cn/new/index.html",
+        target: "http://ehall.xidian.edu.cn/login?service=http://ehall.xidian.edu.cn/new/index.html",
     };
-    #[cfg(feature = "cxlib_login")]
-    pub fn get_login_solver<CaptchaSolver>(
-        self,
-        captcha_solver: CaptchaSolver,
-    ) -> crate::XL4rsLoginSolver<CaptchaSolver>
-    where
-        CaptchaSolver: Fn(&DynamicImage, &DynamicImage) -> Result<u32, CaptchaError>,
-    {
-        crate::XL4rsLoginSolver::new(self, captcha_solver)
-    }
     pub fn login(
         &self,
         agent: &Agent,
@@ -202,11 +198,13 @@ pub struct IDSSession {
 impl Deref for IDSSession {
     type Target = Agent;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.agent
     }
 }
 impl IDSSession {
+    #[inline]
     pub fn login_with_user_agent(
         account: &str,
         passwd: &[u8],
@@ -218,6 +216,7 @@ impl IDSSession {
         login_impl.login(&agent, account, passwd, captcha_solver)?;
         Ok(IDSSession { agent })
     }
+    #[inline]
     pub fn login(
         account: &str,
         passwd: &[u8],
@@ -230,6 +229,7 @@ impl IDSSession {
     }
 }
 impl XL4rsSessionTrait for IDSSession {
+    #[inline]
     fn has_logged_in(&self) -> bool {
         crate::protocol::ids::has_logged_in(&self.agent)
     }

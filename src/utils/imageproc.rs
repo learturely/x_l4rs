@@ -20,37 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#![cfg(feature = "ids")]
-use crate::protocol::ids::IDSProtocolItem;
-use serde::Serialize;
-use ureq::{Agent, Body, http::Response};
+use image::DynamicImage;
 
-/// ``` json
-/// {
-///     cn: "我是谁"
-///     en: "WhoAmI"
-/// }
-/// ```
 #[inline]
-pub fn get_user_conf(agent: &Agent) -> Result<Response<Body>, Box<ureq::Error>> {
-    #[derive(Serialize)]
-    struct Data {
-        n: f64,
-    }
-    Ok(agent
-        .post(IDSProtocolItem::GetUserConf.get())
-        .send_json(Data {
-            n: 0.12724911253015814, // 似乎没用。
-        })?)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use log::info;
-    #[test]
-    fn test_get_user_conf() {
-        let r = get_user_conf(&Agent::new_with_defaults()).unwrap();
-        info!("{}", r.into_body().read_to_string().unwrap());
-    }
+pub fn image_from_bytes(bytes: Vec<u8>) -> DynamicImage {
+    image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .unwrap()
+        .decode()
+        .unwrap()
 }

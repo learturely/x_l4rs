@@ -1,21 +1,28 @@
-//     [xdlinux/libxduauth] for Rust.
-//     Copyright (C) 2024  learturely <learturely@gmail.com>
+// MIT License
 //
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU Affero General Public License as published
-//     by the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+// Copyright (c) 2025 2025  learturely <learturely@gmail.com>
 //
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU Affero General Public License for more details.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 //
-//     You should have received a copy of the GNU Affero General Public License
-//     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-use cxlib_error::LoginError;
 use log::debug;
+
+use crate::error::LoginError;
 
 /// 找到所需的 html 表单内容。
 /// ident 是标识数组，将依次查找标识。
@@ -43,6 +50,7 @@ pub fn find_form_content<'a>(ident: &[&str], html: &'a str) -> Result<&'a str, L
 /// ``` html
 /// <input id="..." name= "..." value="..."/>
 /// ```
+#[inline]
 pub fn find_id_value_pair<'a>(
     ident: &[&str],
     input: &'a str,
@@ -73,12 +81,14 @@ pub fn find_id_value_pair<'a>(
 }
 #[cfg(feature = "rsbbs")]
 pub(crate) mod rsbbs {
-    use cxlib_error::{CaptchaError, LoginError};
     use std::ops::Range;
+
+    use crate::error::{CaptchaError, LoginError};
 
     /// 查找 `id_hash`, 该值与验证码相关。
     ///
     /// updateseccode('id_hash') 会更新二维码，所以该函数会找该函数，并提取其参数。
+    #[inline]
     pub fn find_id_hash(html: &str) -> Option<&str> {
         let func_s = html.find("updateseccode('")?;
         let html = &html[func_s + 15..];
@@ -88,6 +98,7 @@ pub(crate) mod rsbbs {
     }
     /// updateseccode 函数返回的数据中，包含一个 <img> 元素，其 id 为 "vseccode_{id_hash}".
     pub fn find_vcode_img_url<'a>(id_hash: &str, html: &'a str) -> Result<&'a str, LoginError> {
+        #[inline]
         fn find_vcode_img_url_internal<'a>(id_hash: &str, html: &'a str) -> Option<&'a str> {
             let span_s = html.find(&format!("vseccode_{id_hash}"))?;
             let html = &html[span_s..];
@@ -104,6 +115,7 @@ pub(crate) mod rsbbs {
         })
     }
     /// 登录相关，该值用来确定 form id, 为 `loginform_{login_hash}`.
+    #[inline]
     pub fn find_login_hash(html: &str) -> Result<Range<usize>, LoginError> {
         pub fn find_login_hash_internal(html: &str) -> Option<Range<usize>> {
             let s = html.find("loginhash=")? + 10;
@@ -123,6 +135,7 @@ pub(crate) mod rsbbs {
     /// 复用了 login_hash 的范围，因为该值出现在 url 内。
     ///
     /// 注意需要将 `&amp;` 转义为 `&`.
+    #[inline]
     pub fn find_login_url(login_hash_range: Range<usize>, html: &str) -> Result<&str, LoginError> {
         fn find_login_url_internal(login_hash_range: Range<usize>, html: &str) -> Option<&str> {
             let html = &html[..login_hash_range.end];
